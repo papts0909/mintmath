@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MathfieldElement } from "mathlive";
 import "mathlive/fonts.css";
 import { fromDisplay, toDisplay } from "../core/displayLatex";
@@ -9,6 +9,7 @@ import { interceptStrayKey, takeBuffered } from "./keyBuffer";
 import { isCoarsePointer, setupVirtualKeyboard } from "./touch";
 import {
   commaInStructure,
+  expandPendingShortcut,
   maybeAutoSubscript,
   semicolonInStructure,
   tabInStructure,
@@ -45,6 +46,8 @@ interface Props {
   focusNonce: number;
   focusEdge: FocusEdge;
   autoSubscript: boolean;
+  /** Handle Vietnamese/other IME composition ourselves (see effect below). */
+  imeFix: boolean;
   onChange: (content: string) => void;
   onFocus: () => void;
   /** Return true if the key was handled at the document level. */
@@ -65,10 +68,14 @@ function focusNow(mf: MathfieldElement): void {
 }
 
 export default function MathLine(props: Props) {
-  const { line, focused, focusNonce, focusEdge } = props;
+  const { line, focused, focusNonce, focusEdge, imeFix } = props;
   const ref = useRef<MathfieldElement>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
+  /** Text an input method (e.g. a Vietnamese IME on macOS) is still composing. */
+  const [imeText, setImeText] = useState("");
+  /** Letters typed in a row just before the caret (to recognise shortcut words). */
+  const typedLetters = useRef("");
 
   // One-time setup.
   useEffect(() => {
@@ -111,6 +118,76 @@ export default function MathLine(props: Props) {
     };
   }, []);
 
+  // Input methods. Math input is plain ASCII, but a Vietnamese IME on macOS
+  // (marked text) composes every keystroke. MathLive inserts a whole committed
+  // string at once (so "1/2" breaks) and, in WebKit, also handles keystrokes
+  // that belong to the composition (repeated characters). When imeFix is on:
+  // composition never reaches MathLive; we preview it and replay the committed
+  // text key by key. Listeners sit on the field's shadow root in the capture
+  // phase: that is on the event path even when the browser does not let
+  // composition events leave the shadow tree (WebKit), and runs before
+  // MathLive's own listeners on its keyboard sink.
+  useEffect(() => {
+    const mf = ref.current;
+    const root = mf?.shadowRoot;
+    if (!mf || !root || !imeFix) return;
+    const sink = () => root.querySelector<HTMLElement>("[part=keyboard-sink]");
+    let composing = false;
+    const commit = (text: string) => {
+      const el = sink();
+      if (el) el.textContent = "";
+      if (!text) return;
+      for (const ch of text) mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
+      typedLetters.current = /[A-Za-z]+$/.exec(text)?.[0] ?? "";
+      if (expandPendingShortcut(mf, SHORTCUTS)) typedLetters.current = "";
+      propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
+    };
+    const onStart = (e: Event) => {
+      e.stopPropagation();
+      composing = true;
+      setImeText("");
+    };
+    const onUpdate = (e: Event) => {
+      e.stopPropagation();
+      composing = true;
+      setImeText((e as CompositionEvent).data ?? "");
+    };
+    const onEnd = (e: Event) => {
+      e.stopPropagation();
+      composing = false;
+      setImeText("");
+      commit((e as CompositionEvent).data ?? "");
+    };
+    const onKey = (e: Event) => {
+      const ke = e as KeyboardEvent;
+      // Keystrokes the IME is consuming: not for MathLive (no preventDefault,
+      // the IME still needs them).
+      if (composing || ke.isComposing || ke.keyCode === 229 || ke.key === "Process") e.stopPropagation();
+    };
+    const onInputEvent = (e: Event) => {
+      const ie = e as InputEvent;
+      if (composing || ie.isComposing || (ie.inputType ?? "").includes("Composition")) e.stopPropagation();
+    };
+    const opts = { capture: true } as const;
+    root.addEventListener("compositionstart", onStart, opts);
+    root.addEventListener("compositionupdate", onUpdate, opts);
+    root.addEventListener("compositionend", onEnd, opts);
+    root.addEventListener("keydown", onKey, opts);
+    root.addEventListener("keypress", onKey, opts);
+    root.addEventListener("beforeinput", onInputEvent, opts);
+    root.addEventListener("input", onInputEvent, opts);
+    return () => {
+      root.removeEventListener("compositionstart", onStart, opts);
+      root.removeEventListener("compositionupdate", onUpdate, opts);
+      root.removeEventListener("compositionend", onEnd, opts);
+      root.removeEventListener("keydown", onKey, opts);
+      root.removeEventListener("keypress", onKey, opts);
+      root.removeEventListener("beforeinput", onInputEvent, opts);
+      root.removeEventListener("input", onInputEvent, opts);
+      setImeText("");
+    };
+  }, [imeFix]);
+
   // External content changes (undo, load) -> field.
   useEffect(() => {
     const mf = ref.current;
@@ -152,6 +229,8 @@ export default function MathLine(props: Props) {
     const mf = ref.current;
     if (!mf) return;
     const p = propsRef.current;
+    // Keys belonging to an IME composition are handled by the composition events.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (interceptStrayKey(p.line.id, e)) {
       e.preventDefault();
       e.stopPropagation();
@@ -168,8 +247,22 @@ export default function MathLine(props: Props) {
       return;
     }
     const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+    // Track the word being typed so Tab/Space can tell a shortcut just ended.
+    const word = typedLetters.current;
+    typedLetters.current = plain && /^[A-Za-z]$/.test(e.key) ? word + e.key : "";
     let handled = false;
-    if (plain && e.key === ",") handled = commaInStructure(mf);
+    if (plain && !e.shiftKey && (e.key === "Tab" || e.key === " ") && word) {
+      const endsWithShortcut = Object.keys(SHORTCUTS).some((t) => /^[A-Za-z]+$/.test(t) && word.endsWith(t));
+      if (endsWithShortcut) {
+        // MathLive may already have expanded it (first cell selected): Tab/Space
+        // then just confirms and keeps the caret there. Otherwise expand now.
+        handled = true;
+        if (mf.selectionIsCollapsed) expandPendingShortcut(mf, SHORTCUTS);
+      }
+    }
+    if (handled) {
+      // fall through to the shared handled branch below
+    } else if (plain && e.key === ",") handled = commaInStructure(mf);
     else if (plain && e.key === ";") handled = semicolonInStructure(mf);
     else if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === "Tab") {
       handled = tabInStructure(mf, e.shiftKey);
@@ -204,6 +297,11 @@ export default function MathLine(props: Props) {
       }}
     >
       <math-field ref={ref} data-line-id={line.id} aria-label="Dòng toán" />
+      {imeText ? (
+        <span className="ime-preview" aria-live="polite" title="Bộ gõ đang soạn">
+          {imeText}
+        </span>
+      ) : null}
     </div>
   );
 }

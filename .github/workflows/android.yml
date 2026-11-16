@@ -32,7 +32,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest ships the Android SDK (ANDROID_HOME) with licenses accepted;
+      # Gradle downloads any missing platform/build-tools itself.
+      - name: Android SDK
+        run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME"
 
       - run: npm ci
       - name: Build the web app for Android (no export server, no Google sign-in)

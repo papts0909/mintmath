@@ -53,8 +53,9 @@ jobs:
         run: |
           docker run -d --name api -p 8000:8000 mathpad-backend
           for i in $(seq 1 30); do curl -sf localhost:8000/api/health && break; sleep 1; done
-          curl -sf -X POST localhost:8000/api/export/pdf -H 'Content-Type: application/json' \
-            --data @backend/tests/fixtures/sample.json -o sample.pdf
+          code=$(curl -s -o sample.pdf -w '%{http_code}' -X POST localhost:8000/api/export/pdf \
+            -H 'Content-Type: application/json' --data @backend/tests/fixtures/sample.json)
+          if [ "$code" != "200" ]; then echo "HTTP $code"; cat sample.pdf; docker logs api; exit 1; fi
           head -c 5 sample.pdf | grep -q '%PDF-'
 
   e2e:

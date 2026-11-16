@@ -587,3 +587,22 @@ kbd {
 .small {
   font-size: 0.8rem;
 }
+
+.math-line {
+  position: relative;
+}
+/* Text an input method is composing, shown instead of MathLive's highlight. */
+.ime-preview {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--muted);
+  pointer-events: none;
+}
