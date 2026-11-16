@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { printableLatex, renderPrintHtml, texFileName } from "../src/export/localExport";
+import { pageBreaks, printableLatex, renderPrintHtml, texFileName } from "../src/export/localExport";
 import type { Doc } from "../src/core/types";
 
 describe("localExport", () => {
@@ -37,5 +37,25 @@ describe("localExport", () => {
   it("names files after the title", () => {
     expect(texFileName("Bài 1")).toBe("Bài_1.tex");
     expect(texFileName("")).toBe("mathpad.tex");
+  });
+});
+
+describe("pageBreaks", () => {
+  it("keeps everything on one page when it fits", () => {
+    expect(pageBreaks([{ top: 0, bottom: 100 }], 100, 1000)).toEqual([0]);
+  });
+
+  it("breaks before a block that would cross the page bottom", () => {
+    const blocks = [
+      { top: 0, bottom: 400 },
+      { top: 420, bottom: 900 },
+      { top: 920, bottom: 1100 },
+      { top: 1120, bottom: 1500 },
+    ];
+    expect(pageBreaks(blocks, 1500, 1000)).toEqual([0, 920]);
+  });
+
+  it("cuts a block taller than a page", () => {
+    expect(pageBreaks([{ top: 0, bottom: 2500 }], 2500, 1000)).toEqual([0, 1000, 2000]);
   });
 });

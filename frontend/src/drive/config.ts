@@ -1,3 +1,4 @@
+import { isNativeApp } from "../native";
 export interface GoogleConfig {
   clientId: string;
   apiKey: string;
@@ -7,6 +8,8 @@ export interface GoogleConfig {
 export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 export function googleConfig(): GoogleConfig | null {
+  // Google blocks its sign-in page inside embedded WebViews (Android app).
+  if (isNativeApp()) return null;
   const env = import.meta.env;
   const clientId = (env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
   const apiKey = (env.VITE_GOOGLE_API_KEY as string | undefined) ?? "";

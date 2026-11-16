@@ -117,3 +117,92 @@ export async function pngLocal(doc: Doc, pixelRatio = 2): Promise<{ blob: Blob; 
     root.remove();
   }
 }
+
+/** Page break positions (CSS px from the top of `root`) that never cut through
+ *  a block, for pages `pageHeight` tall. Exported for tests. */
+export function pageBreaks(
+  blocks: { top: number; bottom: number }[],
+  total: number,
+  pageHeight: number,
+): number[] {
+  const breaks = [0];
+  let pageStart = 0;
+  for (const b of blocks) {
+    if (b.bottom - pageStart > pageHeight && b.top > pageStart) {
+      pageStart = b.top;
+      breaks.push(pageStart);
+    }
+    // A single block taller than a page is cut at page height.
+    while (b.bottom - pageStart > pageHeight) {
+      pageStart += pageHeight;
+      breaks.push(pageStart);
+    }
+  }
+  if (total - pageStart > pageHeight) {
+    while (total - pageStart > pageHeight) {
+      pageStart += pageHeight;
+      breaks.push(pageStart);
+    }
+  }
+  return breaks;
+}
+
+/** A4 PDF built on the device (an image of the print layout per page). Used
+ *  in the Android app, where the WebView has no print dialog. */
+export async function pdfLocal(doc: Doc, pixelRatio = 2): Promise<{ blob: Blob; filename: string }> {
+  const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
+  const root = mountPrintRoot(doc);
+  root.classList.add("capture");
+  try {
+    await document.fonts.ready;
+    const style = getComputedStyle(root);
+    const padTop = parseFloat(style.paddingTop);
+    const padBottom = parseFloat(style.paddingBottom);
+    const width = root.offsetWidth; // 794 css px = 210 mm
+    const pageHeight = Math.round((width * 297) / 210) - padTop - padBottom;
+    const rootTop = root.getBoundingClientRect().top;
+    const blocks = Array.from(root.children).map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top - rootTop - padTop, bottom: r.bottom - rootTop - padTop };
+    });
+    const contentHeight = root.offsetHeight - padTop - padBottom;
+    const breaks = pageBreaks(blocks, contentHeight, pageHeight);
+
+    const canvas = await toCanvas(root, {
+      pixelRatio,
+      backgroundColor: "#ffffff",
+      style: { position: "static", left: "0", top: "0" },
+    });
+    const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const scale = pageW / width; // pt per css px
+    const marginTop = padTop * scale;
+    breaks.forEach((start, i) => {
+      const end = i + 1 < breaks.length ? breaks[i + 1] : contentHeight;
+      const sliceH = Math.max(1, end - start);
+      const slice = document.createElement("canvas");
+      slice.width = canvas.width;
+      slice.height = Math.ceil(sliceH * pixelRatio);
+      const ctx = slice.getContext("2d");
+      if (!ctx) throw new Error("Canvas không khả dụng");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, slice.width, slice.height);
+      ctx.drawImage(
+        canvas,
+        0,
+        (padTop + start) * pixelRatio,
+        canvas.width,
+        slice.height,
+        0,
+        0,
+        slice.width,
+        slice.height,
+      );
+      if (i > 0) pdf.addPage();
+      pdf.addImage(slice.toDataURL("image/png"), "PNG", 0, marginTop, pageW, sliceH * scale);
+    });
+    return { blob: pdf.output("blob"), filename: texFileName(doc.title).replace(/\.tex$/, ".pdf") };
+  } finally {
+    root.remove();
+  }
+}

@@ -72,6 +72,19 @@ Trên màn cảm ứng:
 | PNG | Ảnh khổ A4 dựng trên máy | Ảnh từ PDF LaTeX |
 | In | Luôn chạy trên máy | |
 
+## App Android (APK)
+
+Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) mỗi khi frontend thay đổi. Cách tải, cài và ký: [docs/ANDROID.md](docs/ANDROID.md). Trong app Android: không có Google Drive; xuất file qua bảng Chia sẻ; PDF tạo ngay trong app.
+
+## Thư viện bài tập và nhập LaTeX
+
+- **📚 Thư viện**: mọi bài đang soạn tự lưu vào thư viện trên thiết bị (IndexedDB). Trong thư viện có thể tìm theo tiêu đề hoặc nội dung, mở, nhân bản, xóa. **Sao lưu** tải toàn bộ thư viện thành một tệp `.json`; **Nhập tệp** khôi phục tệp đó trên máy khác (bài trùng thì giữ bản mới hơn).
+- **Mở tệp / Nhập tệp** nhận `.mathpad.json`, bản sao lưu và **`.tex`**:
+  - File `.tex` do MathPad xuất ra nhập lại đúng nguyên bài.
+  - File LaTeX viết tay đọc được: `\section`/`\title` thành tiêu đề, đoạn văn thành dòng chữ, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline` thành dòng toán (mỗi hàng của align là một dòng nối), `itemize`/`enumerate` thành dòng có dấu đầu dòng.
+  - Đoạn văn có công thức `$…$` xen giữa thành một dòng toán, phần chữ bọc trong `\text{…}`.
+- Thư viện nằm trên từng thiết bị. Muốn dùng chung giữa máy tính và điện thoại thì dùng Sao lưu rồi Nhập, hoặc Google Drive (bản web).
+
 ## Biến môi trường
 
 Xem [.env.example](.env.example). Không commit giá trị thật.

@@ -9,13 +9,17 @@ import {
 import { useDocStore } from "../core/docStore";
 import { TexLineError } from "../core/texBuilder";
 import { uploadBlobToDrive, useDriveUi } from "../drive/driveActions";
-import { exportTexLocal, pngLocal, printDoc } from "../export/localExport";
+import { exportTexLocal, pdfLocal, pngLocal, printDoc } from "../export/localExport";
+import { isNativeApp } from "../native";
 
 interface Props {
   onPreview: (url: string) => void;
 }
 
 type Status = { kind: "info" | "error"; text: string } | null;
+
+// Android app: no print dialog in the WebView, so PDFs are built on the device.
+const NATIVE = isNativeApp();
 
 const OFFLINE_PDF_HINT =
   "Không có máy chủ xuất PDF: đã mở hộp thoại In — chọn “Lưu thành PDF” (trên điện thoại: In → Chia sẻ/Lưu).";
@@ -79,6 +83,12 @@ export default function ExportMenu({ onPreview }: Props) {
           downloadBlob(blob, filename);
         },
         async () => {
+          if (NATIVE) {
+            exportTexLocal(doc());
+            const { blob, filename } = await pdfLocal(doc());
+            downloadBlob(blob, filename);
+            return;
+          }
           print();
           return { kind: "info", text: OFFLINE_PDF_HINT };
         },
@@ -136,17 +146,26 @@ export default function ExportMenu({ onPreview }: Props) {
       <button type="button" disabled={busy !== null} onClick={() => void png()}>
         PNG
       </button>
-      <button type="button" disabled={busy !== null} onClick={() => void preview()} title="Xem trước bản in">
-        Xem trước
-      </button>
-      <button
-        type="button"
-        disabled={busy !== null}
-        onClick={() => void run("bản in", async () => print())}
-        title="In hoặc lưu PDF ngay trên máy, không cần mạng"
-      >
-        In
-      </button>
+      {NATIVE ? null : (
+        <>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void preview()}
+            title="Xem trước bản in"
+          >
+            Xem trước
+          </button>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void run("bản in", async () => print())}
+            title="In hoặc lưu PDF ngay trên máy, không cần mạng"
+          >
+            In
+          </button>
+        </>
+      )}
       {signedIn && SERVER_ENABLED ? (
         <button type="button" disabled={busy !== null} onClick={() => void pdfToDrive()}>
           Lưu PDF lên Drive

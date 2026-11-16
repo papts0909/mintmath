@@ -4,6 +4,7 @@ import { docFileName, DocFormatError, serializeDoc } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
 import { newId } from "../core/id";
 import { getDoc } from "../core/library";
+import { isNativeApp } from "../native";
 import { useDocStore } from "../core/docStore";
 import type { Settings } from "../core/persistence";
 import {
@@ -137,7 +138,9 @@ export default function Toolbar(props: Props) {
         <div role="group" aria-label="Google Drive" className="drive">
           {!drive.configured ? (
             <span className="muted" title="Đặt VITE_GOOGLE_CLIENT_ID để bật Google Drive">
-              Google Drive chưa được cấu hình
+              {isNativeApp()
+                ? "Google Drive dùng ở bản web; trong app dùng Thư viện → Sao lưu"
+                : "Google Drive chưa được cấu hình"}
             </span>
           ) : drive.signedIn ? (
             <>
