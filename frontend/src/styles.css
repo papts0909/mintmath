@@ -102,6 +102,7 @@ input[type="search"] {
 
 .app {
   min-height: 100vh;
+  padding-bottom: var(--vk-height, 0px);
   display: flex;
   flex-direction: column;
 }
@@ -256,9 +257,13 @@ input[type="search"] {
   --selection-background-color: var(--accent-soft);
   --primary: var(--accent);
 }
-.math-line math-field::part(virtual-keyboard-toggle),
 .math-line math-field::part(menu-toggle) {
   display: none;
+}
+@media (pointer: fine) {
+  .math-line math-field::part(virtual-keyboard-toggle) {
+    display: none;
+  }
 }
 .math-line math-field:focus-within {
   outline: none;
@@ -384,6 +389,8 @@ kbd {
 @media (max-width: 640px) {
   .toolbar {
     padding: 6px 8px;
+    /* Scrolls away on phones; the line-action bar stays pinned instead. */
+    position: static;
   }
   .workspace {
     padding: 8px 4px;
@@ -404,5 +411,108 @@ kbd {
   .preview {
     inset: 0;
     border-radius: 0;
+  }
+}
+
+/* Printable layout used by the on-device PDF (print) and PNG export. */
+#print-root {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 794px; /* A4 at 96 dpi */
+  padding: 64px 72px;
+  background: #ffffff;
+  color: #000000;
+  font-family: "DejaVu Serif", Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+#print-root h1 {
+  font-size: 24px;
+  margin: 0 0 16px;
+}
+#print-root p {
+  margin: 0 0 8px;
+  overflow-wrap: break-word;
+}
+#print-root p.gap {
+  height: 8px;
+}
+#print-root .math-block {
+  margin: 12px 0;
+  text-align: center;
+  font-size: 18px;
+}
+#print-root .math-row {
+  margin: 4px 0;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  body:has(#print-root) > *:not(#print-root) {
+    display: none !important;
+  }
+  body:has(#print-root) {
+    background: #ffffff;
+  }
+  #print-root {
+    position: static;
+    width: auto;
+    padding: 0;
+  }
+  #print-root .math-block {
+    break-inside: avoid;
+  }
+}
+
+.install-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.badge {
+  font-size: 0.8rem;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.badge.offline {
+  background: var(--selected);
+  color: var(--text);
+}
+.ios-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 320px;
+}
+
+.touch-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 8px;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.touch-bar button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  min-width: 40px;
+}
+@media (pointer: coarse) {
+  .touch-bar {
+    display: flex;
+  }
+  button,
+  select {
+    min-height: 36px;
   }
 }

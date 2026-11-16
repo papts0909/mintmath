@@ -13,6 +13,7 @@ import {
 } from "../drive/driveActions";
 import { copyLines } from "./Editor";
 import ExportMenu from "./ExportMenu";
+import InstallBar from "./InstallBar";
 
 interface Props {
   savedLocally: boolean;
@@ -70,6 +71,7 @@ export default function Toolbar(props: Props) {
           value={title}
           onChange={(e) => useDocStore.getState().setTitle(e.target.value)}
         />
+        <InstallBar />
         <span className="save-state" role="status" aria-live="polite">
           {props.savedLocally ? "Đã lưu" : "Đang lưu…"}
         </span>

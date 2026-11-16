@@ -18,7 +18,21 @@ export default defineConfig({
     trace: "off",
     launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: ["**/mobile.spec.ts", "**/pwa.spec.ts"],
+    },
+    // Touch phone layout (Chromium with Pixel 7 metrics, touch and coarse pointer).
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: "**/mobile.spec.ts" },
+    // Production build served by `vite preview`, with the service worker.
+    {
+      name: "pwa",
+      use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4173" },
+      testMatch: "**/pwa.spec.ts",
+    },
+  ],
   webServer: [
     {
       command: backendCmd,
@@ -32,6 +46,13 @@ export default defineConfig({
       url: "http://localhost:5173",
       reuseExistingServer: true,
       timeout: 60_000,
+    },
+    {
+      command: "npx vite build --logLevel error && npx vite preview --port 4173 --strictPort",
+      env: { VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID },
+      url: "http://localhost:4173",
+      reuseExistingServer: true,
+      timeout: 120_000,
     },
   ],
 });

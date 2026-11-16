@@ -25,7 +25,7 @@ Thêm cột cho `array` do frontend tự làm: viết lại LaTeX (`addColumn` t
 - Không có API công khai cho biết con trỏ đang ở ô nào của ma trận; `getValue(start, end)` trên một khoảng bên trong ma trận chỉ trả nội dung đã làm phẳng. Cách làm: chèn tạm `\ddagger` tại con trỏ, đọc LaTeX rồi `undo`. Undo khôi phục cả giá trị lẫn vùng chọn (kể cả placeholder đang được chọn), nên lịch sử undo không bị bẩn. Xem `probeCell` trong `mathfieldTools.ts`.
 - Phím `Tab` và các phím `,` `;` được chặn ở pha capture trên phần tử bao (React `onKeyDownCapture`) trước khi MathLive nhận.
 - Ô trống là `\placeholder{}`. Khi cấu trúc vừa chèn thì placeholder đầu tiên đang được chọn, `selectionIsCollapsed` là false.
-- Có một lỗi hiển thị nhỏ: `\left[ … array … \right]` trong MathLive có thêm khoảng trống phía trên ma trận (bmatrix thì không). PDF xuất ra không bị. Đã ghi vào BACKLOG.
+- Có một lỗi hiển thị nhỏ: `\left[ … array … \right]` trong MathLive có thêm khoảng trống phía trên ma trận (bmatrix thì không). Đã khắc phục bằng dạng hiển thị riêng (xem mục PWA bên dưới).
 
 ## P0-T2 — Tectonic và tiếng Việt
 
@@ -55,3 +55,22 @@ Môi trường agent **không chạy được Docker** (không có daemon) và *
 - **Quy tắc d1 → d₁** áp dụng cho một chữ cái theo sau là một chữ số, bật/tắt bằng ô "d1 → d₁" trên thanh công cụ (lưu trong localStorage).
 - **Playwright** đặt cố định bản 1.63.0 để khớp trình duyệt có sẵn trong môi trường agent. Trên CI thì `npx playwright install` cài đúng bản.
 - **Tên file tải về** có dấu tiếng Việt. Riêng Chromium headless báo tên non-ASCII là `download` (lỗi của môi trường test), nên test E2E dùng tiêu đề không dấu.
+
+## Đóng gói đa thiết bị: PWA (thay cho app trên store)
+
+Yêu cầu: chạy trên máy tính, Android, iOS/iPadOS, dùng cá nhân và chia sẻ bạn bè, không lên store. Chọn **PWA** (`vite-plugin-pwa`, Workbox `generateSW`), không dùng Capacitor/Tauri.
+
+- **Service worker** precache toàn bộ app, kể cả font toán của MathLive, nên mở offline được sau lần đầu. `/api/*` không bao giờ được cache.
+- **Xuất tại máy:**
+  - `.tex`: `src/core/texBuilder.ts` là bản TS của `normalize.py` và `tex_builder.py`. Hai bản cùng được kiểm bằng file golden `backend/tests/golden/` (pytest và vitest), nên luôn cho kết quả giống hệt nhau.
+  - PDF: `window.print()` trên một bố cục A4 dựng bằng `convertLatexToMarkup` của MathLive.
+  - PNG: `html-to-image` chụp chính bố cục đó, ở 2x.
+  - Máy chủ chỉ còn là tùy chọn. Khi máy chủ không trả lời (mất mạng, host tĩnh trả 404/405, proxy trả 5xx không phải JSON), nút PDF/PNG tự chuyển sang xuất tại máy.
+- **Ma trận bổ sung khi hiển thị:** MathLive vẽ `\left[ array \right]` với một khoảng trống lớn phía trên ma trận. Editor và bản in hiển thị dạng `\begin{bmatrix}\begin{array}{…|…}…\end{array}\end{bmatrix}` (không có khoảng trống, vẫn sửa được từng ô). Dữ liệu lưu và xuất vẫn là dạng chuẩn. Chuyển đổi nằm ở `src/core/displayLatex.ts`.
+- **Màn cảm ứng** (`pointer: coarse`):
+  - Bật bàn phím toán ảo của MathLive, có thêm layout "MathPad" với ký hiệu và cấu trúc.
+  - Thanh nút thao tác dòng ghim trên cùng (nút không cướp focus).
+  - Nội dung chừa chỗ cho bàn phím ảo (`--vk-height`).
+  - Trên màn hẹp, thanh công cụ cuộn theo trang.
+- **Cài app:** nút "Cài ứng dụng" dùng sự kiện `beforeinstallprompt` (Chrome/Edge/Android). Trên iOS/iPadOS có hướng dẫn "Thêm vào MH chính".
+- **Phát hành:** workflow GitHub Pages chạy thủ công (`.github/workflows/pages.yml`), build với `VITE_BASE=/<repo>/`.

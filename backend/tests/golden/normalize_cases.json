@@ -1,0 +1,110 @@
+[
+  {
+    "in": " x^{2}+1 ",
+    "out": "x^{2}+1"
+  },
+  {
+    "in": "",
+    "out": ""
+  },
+  {
+    "in": "\\frac{\\placeholder{}}{2}",
+    "out": "\\frac{{}}{2}"
+  },
+  {
+    "in": "\\placeholder[a]{x}+1",
+    "out": "{x}+1"
+  },
+  {
+    "in": "1+\\placeholder",
+    "out": "1+{}"
+  },
+  {
+    "in": "\\R",
+    "out": "\\mathbb{R}"
+  },
+  {
+    "in": "x\\in\\N",
+    "out": "x\\in\\mathbb{N}"
+  },
+  {
+    "in": "\\Z\\cup\\Q\\cup\\C",
+    "out": "\\mathbb{Z}\\cup\\mathbb{Q}\\cup\\mathbb{C}"
+  },
+  {
+    "in": "\\differentialD x",
+    "out": "\\mathrm{d} x"
+  },
+  {
+    "in": "\\exponentialE^{x}",
+    "out": "\\mathrm{e}^{x}"
+  },
+  {
+    "in": "\\mleft(x\\mright)",
+    "out": "\\left(x\\right)"
+  },
+  {
+    "in": "\\lbrace x\\rbrace",
+    "out": "\\{ x\\}"
+  },
+  {
+    "in": "\\Rightarrow\\Re\\Nu",
+    "out": "\\Rightarrow\\Re\\Nu"
+  },
+  {
+    "in": "\\left[\\begin{array}{c c | c}1&2&3\\end{array}\\right]",
+    "out": "\\left[\\begin{array}{cc|c}1&2&3\\end{array}\\right]"
+  },
+  {
+    "in": "\\augmented{1}{\\begin{bmatrix}1&2&3\\\\4&5&6\\end{bmatrix}}",
+    "out": "\\left[\\begin{array}{cc|c}1&2&3\\\\4&5&6\\end{array}\\right]"
+  },
+  {
+    "in": "\\augmented{2}{\\begin{bmatrix}1&2&3&4\\end{bmatrix}}",
+    "out": "\\left[\\begin{array}{cc|cc}1&2&3&4\\end{array}\\right]"
+  },
+  {
+    "in": "\\augmented{x}{1}",
+    "error": true
+  },
+  {
+    "in": "\\input{/etc/passwd}",
+    "error": true
+  },
+  {
+    "in": "\\write18{x}",
+    "error": true
+  },
+  {
+    "in": "\\def\\x{1}",
+    "error": true
+  },
+  {
+    "in": "\\csname input\\endcsname",
+    "error": true
+  },
+  {
+    "in": "x^^5cinput",
+    "error": true
+  },
+  {
+    "in": "\\delta+\\inf",
+    "out": "\\delta+\\inf"
+  },
+  {
+    "in": "\\frac{1}{2",
+    "error": true
+  },
+  {
+    "in": "x}",
+    "error": true
+  },
+  {
+    "in": "\\begin{cases}x",
+    "error": true
+  },
+  {
+    "in": "\\begin{cases}x\\\\y\\end{cases}",
+    "out": "\\begin{cases}x\\\\y\\end{cases}"
+  }
+]

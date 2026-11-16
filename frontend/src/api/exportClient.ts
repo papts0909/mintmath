@@ -7,6 +7,8 @@ export class ExportError extends Error {
     message: string,
     readonly status: number,
     readonly lineId: string | null = null,
+    /** True when the response did not come from the MathPad export API. */
+    readonly noServer = false,
   ) {
     super(message);
     this.name = "ExportError";
@@ -19,6 +21,14 @@ export interface ExportResult {
 }
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
+
+/** "off" = static hosting without the export server: always export on the device. */
+export const SERVER_ENABLED = (import.meta.env.VITE_EXPORT_SERVER as string | undefined) !== "off";
+
+/** Errors meaning "no export server here" (offline, static hosting, no TeX engine). */
+export function isServerUnavailable(e: unknown): boolean {
+  return e instanceof ExportError && (e.noServer || [0, 404, 405, 502, 503].includes(e.status));
+}
 
 /** Parse `filename*=UTF-8''...` (preferred) or `filename="..."`. */
 export function filenameFromDisposition(header: string | null, fallback: string): string {
@@ -38,16 +48,18 @@ export function filenameFromDisposition(header: string | null, fallback: string)
 async function errorFrom(res: Response): Promise<ExportError> {
   let message = `Lỗi máy chủ (${res.status})`;
   let lineId: string | null = null;
+  let fromApi = false;
   try {
     const data = (await res.json()) as { message?: unknown; lineId?: unknown; detail?: unknown };
+    fromApi = true;
     if (typeof data.message === "string") message = data.message;
     else if (res.status === 422) message = "Tài liệu không đúng cấu trúc";
     if (typeof data.lineId === "string") lineId = data.lineId;
   } catch {
-    /* non-JSON error body */
+    /* non-JSON body: a proxy or static host answered, not the export API */
   }
   if (res.status === 504) message = "Biên dịch quá thời gian cho phép (20 giây)";
-  return new ExportError(message, res.status, lineId);
+  return new ExportError(message, res.status, lineId, !fromApi && res.status >= 500);
 }
 
 export async function exportDoc(

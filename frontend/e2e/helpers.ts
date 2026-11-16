@@ -13,7 +13,16 @@ export async function readLines(page: Page): Promise<LineView[]> {
       const mf = li.querySelector("math-field") as (HTMLElement & { getValue: (f: string) => string }) | null;
       const input = li.querySelector<HTMLTextAreaElement>("textarea.text-line");
       const view: { type: "math" | "text"; content: string; joinPrev?: boolean } = mf
-        ? { type: "math", content: mf.getValue("latex") }
+        ? {
+            type: "math",
+            // Same mapping as src/core/displayLatex.ts fromDisplay().
+            content: mf
+              .getValue("latex")
+              .replace(
+                /\\begin\{bmatrix\}\s*(\\begin\{array\}\{[^}]*\}[\s\S]*?\\end\{array\})\s*\\end\{bmatrix\}/g,
+                "\\left[$1\\right]",
+              ),
+          }
         : { type: "text", content: input?.value ?? "" };
       if (li.classList.contains("is-joined")) view.joinPrev = true;
       return view;

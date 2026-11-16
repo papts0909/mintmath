@@ -6,6 +6,8 @@ MathPad là ứng dụng web để trình bày bài giải toán theo từng dò
 - **Backend:** FastAPI, chỉ lo việc xuất file: LaTeX → PDF bằng Tectonic hoặc XeLaTeX, PDF → PNG bằng `pdftoppm`. Thư mục `backend/`.
 - **Dữ liệu:** nằm ở trình duyệt (localStorage) và Google Drive. Backend không có cơ sở dữ liệu và không giữ token.
 
+MathPad là **PWA**: cài được như ứng dụng lên máy tính (Chrome/Edge), Android, iPhone và iPad, và chạy offline. Soạn bài, lưu trên máy, xuất `.tex`, In/Lưu PDF và xuất PNG đều chạy ngay trên thiết bị. Máy chủ xuất file là **tùy chọn**: khi có, nút PDF/PNG cho bản dàn trang LaTeX chuẩn; khi không có hoặc mất mạng, app tự dùng bản xuất tại máy.
+
 Tài liệu kèm theo: [docs/DECISIONS.md](docs/DECISIONS.md) (kết quả spike, các quyết định), [docs/DEPLOY.md](docs/DEPLOY.md) (triển khai), [docs/BACKLOG.md](docs/BACKLOG.md).
 
 ## Chạy khi phát triển
@@ -50,6 +52,26 @@ cd frontend && npx playwright test
 
 Playwright tự bật backend (cổng 8000) và Vite (cổng 5173). Các test Drive thay Google bằng bản giả, không cần tài khoản thật. Test biên dịch PDF ở backend tự bỏ qua nếu máy không có engine TeX.
 
+## Cài lên thiết bị (dùng cá nhân, chia sẻ bạn bè)
+
+1. Đưa bản web lên một chỗ có HTTPS: GitHub Pages (workflow có sẵn), Cloudflare Pages hoặc Netlify. Xem [docs/DEPLOY.md](docs/DEPLOY.md), mục "Chỉ bản web (PWA)". Không bắt buộc có backend.
+2. Gửi đường link cho bạn bè, rồi cài như sau:
+   - **Máy tính** (Chrome, Edge): bấm nút "Cài ứng dụng" trên thanh công cụ, hoặc biểu tượng cài trên thanh địa chỉ.
+   - **Android** (Chrome): bấm "Cài ứng dụng" hoặc menu ⋮ → "Cài đặt ứng dụng".
+   - **iPhone, iPad** (Safari): bấm Chia sẻ → "Thêm vào MH chính". Nút "Cài lên máy" trong app có hướng dẫn.
+3. Sau lần mở đầu tiên, app chạy được khi không có mạng. Khi có bản mới, app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
+
+Trên màn cảm ứng:
+- Bấm vào dòng toán sẽ mở bàn phím toán. Tab **MathPad** có ∀ ∃ ⇒ ⇔ ∈ ℝ…, hệ phương trình, ma trận, ma trận bổ sung [A|b], thêm hàng/cột, phân số, căn.
+- Thanh nút ghim trên cùng thay cho các phím Ctrl/Alt: thêm dòng toán/chữ, nối dòng, đổi loại, đưa dòng lên/xuống, nhân đôi, xóa, hoàn tác.
+
+| Xuất | Không có máy chủ / ngoại tuyến | Có máy chủ |
+| --- | --- | --- |
+| LaTeX (.tex) | Dựng ngay trên máy, giống hệt bản máy chủ | như cột bên |
+| PDF | Mở hộp thoại In → "Lưu thành PDF" | PDF dàn trang bằng LaTeX |
+| PNG | Ảnh khổ A4 dựng trên máy | Ảnh từ PDF LaTeX |
+| In | Luôn chạy trên máy | |
+
 ## Biến môi trường
 
 Xem [.env.example](.env.example). Không commit giá trị thật.
@@ -60,6 +82,8 @@ Xem [.env.example](.env.example). Không commit giá trị thật.
 | `VITE_GOOGLE_API_KEY` | frontend | API key cho Google Picker |
 | `VITE_GOOGLE_APP_ID` | frontend | Số hiệu project Google Cloud (Picker) |
 | `VITE_API_BASE` | frontend | URL backend khi khác origin (production) |
+| `VITE_EXPORT_SERVER` | frontend | `off` = không dùng máy chủ xuất file, mọi định dạng xuất tại máy |
+| `VITE_BASE` | frontend (build) | Đường dẫn con khi đặt app dưới thư mục, ví dụ `/mintmath/` trên GitHub Pages |
 | `MATHPAD_CORS_ORIGINS` | backend | Các origin được phép gọi API, cách nhau bằng dấu phẩy |
 | `MATHPAD_RATE_LIMIT` | backend | Số lượt xuất mỗi phút mỗi IP (mặc định 20) |
 | `MATHPAD_MAX_CONCURRENT` | backend | Số lượt biên dịch đồng thời (mặc định 2) |
@@ -115,10 +139,11 @@ API backend: `GET /api/health`, `POST /api/export/tex`, `POST /api/export/pdf`, 
 
 - Tectonic chưa chạy thử được trong môi trường phát triển của agent (không có Docker). Đã kiểm chứng bằng XeLaTeX; image Docker được build và chạy thử trong job CI `docker`. Xem DECISIONS.md.
 - Google Drive mới được test với Google giả lập. Cần Client ID thật để nghiệm thu với Google.
-- MathLive hiển thị ma trận bổ sung với một khoảng trống thừa phía trên. PDF thì đúng.
+- PDF xuất tại máy là bản in của trình duyệt, không phải dàn trang LaTeX. Muốn bản LaTeX chuẩn thì cần máy chủ xuất file, hoặc tải `.tex` về rồi biên dịch.
+- "Lưu PDF lên Drive" cần máy chủ xuất file.
 - Khi ứng dụng OAuth còn ở chế độ Testing, chỉ tài khoản trong danh sách test users đăng nhập được. Scope `drive.file` chỉ thấy file do MathPad tạo hoặc file chọn qua Picker.
 
 ## Việc cần người làm
 
 1. **Google Cloud** (Phase 4): tạo project, bật Drive API và Picker API, màn hình đồng ý OAuth với scope `drive.file`, OAuth Client ID (Web) và API key. Đưa vào `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_APP_ID`.
-2. **Triển khai** (Phase 5): chọn nền tảng và tên miền theo [docs/DEPLOY.md](docs/DEPLOY.md).
+2. **Đưa bản web lên mạng**: bật GitHub Pages (Settings → Pages → Source: GitHub Actions), rồi chạy workflow "Deploy PWA to GitHub Pages". Repo private thì GitHub Pages cần gói trả phí; khi đó dùng Cloudflare Pages hoặc Netlify (miễn phí). Máy chủ xuất PDF là tùy chọn.

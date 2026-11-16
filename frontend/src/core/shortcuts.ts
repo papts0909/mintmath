@@ -1,5 +1,6 @@
 // Single source of truth for math text shortcuts: loaded into MathLive's
 // inline shortcuts and reused by the help panel.
+import { toDisplay } from "./displayLatex";
 import { buildEnv } from "./matrix";
 
 export type ShortcutGroup = "Logic" | "Tập hợp" | "Quan hệ" | "Phép toán" | "Cấu trúc";
@@ -64,7 +65,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
 
 /** MathLive inline-shortcut dictionary built from SHORTCUTS. */
 export function inlineShortcutMap(): Record<string, string> {
-  return Object.fromEntries(SHORTCUTS.map((s) => [s.trigger, s.latex]));
+  return Object.fromEntries(SHORTCUTS.map((s) => [s.trigger, toDisplay(s.latex)]));
 }
 
 export function searchShortcuts(query: string): Shortcut[] {

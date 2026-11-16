@@ -81,7 +81,7 @@ jobs:
       - name: Frontend deps and browser
         working-directory: frontend
         run: npm ci && npx playwright install --with-deps chromium
-      - name: Playwright
+      - name: Playwright (desktop, phone layout, PWA offline)
         working-directory: frontend
         run: npx playwright test --trace off
         env:

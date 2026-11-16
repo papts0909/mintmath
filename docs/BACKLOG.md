@@ -4,7 +4,6 @@
 
 ## Hiển thị
 
-- `\left[ array \right]` trong MathLive có khoảng trống thừa phía trên ma trận bổ sung. Có thể sửa bằng CSS trong shadow DOM hoặc báo lỗi cho MathLive.
 - Gõ `(2m+1)/` tạo `\frac{\left(2m+1\right)}{…}` và giữ cả ngoặc. Có thể tự bỏ ngoặc ngoài cùng của tử số.
 - Chọn font toán khớp với DejaVu (ví dụ `unicode-math` với `DejaVu Math TeX Gyre`) để PDF đồng bộ phong cách.
 
@@ -14,6 +13,12 @@
 - Kéo thả nhiều dòng đã chọn cùng lúc.
 - Ghi nhớ vị trí con trỏ khi undo/redo cấp tài liệu.
 - Thêm lệnh tắt: `lim` có chỉ số, `int` có cận, ma trận kích thước tùy chọn (ví dụ `mat3x4`).
+
+## Thiết bị
+
+- Thử trên iPhone/iPad và Android thật: bàn phím toán ảo, cài lên màn hình chính, chạy offline. E2E mới giả lập Pixel 7 trên Chromium.
+- Nếu sau này cần đưa lên store: dùng Capacitor bọc chính frontend này (đăng nhập Google phải chuyển sang plugin native).
+- Nếu cần PDF chuẩn LaTeX mà không có máy chủ trên desktop: dùng Tauri kèm Tectonic.
 
 ## Xuất và Drive
 

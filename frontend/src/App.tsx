@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Editor from "./components/Editor";
 import ShortcutPanel from "./components/ShortcutPanel";
 import Toolbar from "./components/Toolbar";
+import TouchBar from "./components/TouchBar";
 import { useDocStore } from "./core/docStore";
 import {
   createAutosaver,
@@ -78,6 +79,23 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // Keep the focused line above MathLive's on-screen keyboard (touch devices).
+  useEffect(() => {
+    const kbd = window.mathVirtualKeyboard;
+    if (!kbd) return;
+    const onGeometry = () => {
+      const h = kbd.visible ? kbd.boundingRect.height : 0;
+      document.documentElement.style.setProperty("--vk-height", `${h}px`);
+      if (h) document.querySelector(".line.is-focused")?.scrollIntoView({ block: "nearest" });
+    };
+    kbd.addEventListener("geometrychange", onGeometry);
+    kbd.addEventListener("virtual-keyboard-toggle", onGeometry);
+    return () => {
+      kbd.removeEventListener("geometrychange", onGeometry);
+      kbd.removeEventListener("virtual-keyboard-toggle", onGeometry);
+    };
+  }, []);
+
   // Focus the first line on start.
   useEffect(() => {
     const st = useDocStore.getState();
@@ -107,6 +125,7 @@ export default function App() {
         }}
         onMessage={setToast}
       />
+      <TouchBar />
       <main className="workspace">
         <Editor autoSubscript={settings.autoSubscript} />
         {showShortcuts ? <ShortcutPanel onClose={() => setShowShortcuts(false)} /> : null}

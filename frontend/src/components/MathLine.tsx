@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { MathfieldElement } from "mathlive";
 import "mathlive/fonts.css";
+import { fromDisplay, toDisplay } from "../core/displayLatex";
 import { inlineShortcutMap } from "../core/shortcuts";
 import type { Line } from "../core/types";
 import type { FocusEdge } from "../core/docStore";
 import { interceptStrayKey, takeBuffered } from "./keyBuffer";
+import { isCoarsePointer, setupVirtualKeyboard } from "./touch";
 import {
   commaInStructure,
   maybeAutoSubscript,
@@ -72,16 +74,18 @@ export default function MathLine(props: Props) {
   useEffect(() => {
     const mf = ref.current;
     if (!mf) return;
-    mf.mathVirtualKeyboardPolicy = "manual";
+    // On touch screens show MathLive's on-screen keyboard (with the MathPad layout).
+    setupVirtualKeyboard();
+    mf.mathVirtualKeyboardPolicy = isCoarsePointer() ? "auto" : "manual";
     mf.inlineShortcuts = { ...mf.inlineShortcuts, ...SHORTCUTS };
     mf.inlineShortcutTimeout = 0;
     mf.smartFence = true;
     mf.menuItems = [];
-    mf.setValue(propsRef.current.line.content, { silenceNotifications: true });
+    mf.setValue(toDisplay(propsRef.current.line.content), { silenceNotifications: true });
 
     // Inline shortcuts may rewrite the formula after the input event fired, so
     // sync again on the next frame and when the field loses focus.
-    const sync = () => propsRef.current.onChange(mf.getValue("latex"));
+    const sync = () => propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
     let frame = 0;
     const onInput = () => {
       sync();
@@ -110,8 +114,8 @@ export default function MathLine(props: Props) {
   // External content changes (undo, load) -> field.
   useEffect(() => {
     const mf = ref.current;
-    if (mf && mf.getValue("latex") !== line.content) {
-      mf.setValue(line.content, { silenceNotifications: true });
+    if (mf && fromDisplay(mf.getValue("latex")) !== line.content) {
+      mf.setValue(toDisplay(line.content), { silenceNotifications: true });
     }
   }, [line.content]);
 
@@ -136,7 +140,7 @@ export default function MathLine(props: Props) {
       const pending = takeBuffered(propsRef.current.line.id);
       if (pending) {
         mf.executeCommand(["typedText", pending, { simulateKeystroke: true }]);
-        propsRef.current.onChange(mf.getValue("latex"));
+        propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
       }
     };
     apply();
@@ -156,7 +160,7 @@ export default function MathLine(props: Props) {
     const ctx: LineKeyContext = {
       isEmpty: mf.getValue("latex").trim() === "",
       fieldUndo: (redo) => undoSkippingProbes(mf, redo),
-      sync: () => p.onChange(mf.getValue("latex")),
+      sync: () => p.onChange(fromDisplay(mf.getValue("latex"))),
     };
     if (p.onKey(e, ctx)) {
       e.preventDefault();
@@ -178,7 +182,7 @@ export default function MathLine(props: Props) {
     if (handled) {
       e.preventDefault();
       e.stopPropagation();
-      p.onChange(mf.getValue("latex"));
+      p.onChange(fromDisplay(mf.getValue("latex")));
     }
   };
 

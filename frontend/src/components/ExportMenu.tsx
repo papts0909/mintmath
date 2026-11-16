@@ -1,74 +1,153 @@
 import { useState } from "react";
-import { downloadBlob, ExportError, exportDoc, type ExportKind } from "../api/exportClient";
+import {
+  downloadBlob,
+  ExportError,
+  exportDoc,
+  isServerUnavailable,
+  SERVER_ENABLED,
+} from "../api/exportClient";
 import { useDocStore } from "../core/docStore";
+import { TexLineError } from "../core/texBuilder";
 import { uploadBlobToDrive, useDriveUi } from "../drive/driveActions";
+import { exportTexLocal, pngLocal, printDoc } from "../export/localExport";
 
 interface Props {
   onPreview: (url: string) => void;
 }
 
-const LABELS: Record<ExportKind, string> = { tex: "LaTeX (.tex)", pdf: "PDF", png: "Ảnh PNG" };
+type Status = { kind: "info" | "error"; text: string } | null;
+
+const OFFLINE_PDF_HINT =
+  "Không có máy chủ xuất PDF: đã mở hộp thoại In — chọn “Lưu thành PDF” (trên điện thoại: In → Chia sẻ/Lưu).";
 
 export default function ExportMenu({ onPreview }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
-  const [status, setStatus] = useState<{ kind: "info" | "error"; text: string } | null>(null);
+  const [status, setStatus] = useState<Status>(null);
   const signedIn = useDriveUi((s) => s.signedIn);
+  const doc = () => useDocStore.getState().doc;
 
-  const run = async (label: string, fn: () => Promise<void>) => {
+  const run = async (label: string, fn: () => Promise<Status | void>) => {
     setBusy(label);
     setStatus({ kind: "info", text: `Đang xuất ${label}…` });
     useDocStore.getState().setError(null);
     try {
-      await fn();
-      setStatus(null);
+      setStatus((await fn()) ?? null);
     } catch (e) {
-      if (e instanceof ExportError) {
-        if (e.lineId) {
-          useDocStore.getState().setError({ lineId: e.lineId, message: e.message });
-          const idx = useDocStore.getState().doc.lines.findIndex((l) => l.id === e.lineId);
-          setStatus({ kind: "error", text: `Lỗi ở dòng ${idx + 1}: ${e.message}` });
-          useDocStore.getState().focusLine(e.lineId);
-        } else {
-          setStatus({ kind: "error", text: e.message });
-        }
+      const lineId = e instanceof ExportError || e instanceof TexLineError ? e.lineId : null;
+      const message = e instanceof Error ? e.message : "Xuất file thất bại";
+      if (lineId) {
+        useDocStore.getState().setError({ lineId, message });
+        const idx = doc().lines.findIndex((l) => l.id === lineId);
+        setStatus({ kind: "error", text: `Lỗi ở dòng ${idx + 1}: ${message}` });
+        useDocStore.getState().focusLine(lineId);
       } else {
-        setStatus({ kind: "error", text: e instanceof Error ? e.message : "Xuất file thất bại" });
+        setStatus({ kind: "error", text: message });
       }
     } finally {
       setBusy(null);
     }
   };
 
-  const doExport = (kind: ExportKind) =>
-    run(LABELS[kind], async () => {
-      const { blob, filename } = await exportDoc(kind, useDocStore.getState().doc);
+  /** Try the server; when it is unreachable, run the on-device fallback. */
+  const withFallback = async (server: () => Promise<void>, local: () => Promise<Status | void>) => {
+    if (!SERVER_ENABLED) return local();
+    try {
+      await server();
+    } catch (e) {
+      if (isServerUnavailable(e)) return local();
+      throw e;
+    }
+  };
+
+  const tex = () =>
+    run("LaTeX", async () => {
+      const { blob, filename } = exportTexLocal(doc());
       downloadBlob(blob, filename);
     });
 
+  const print = (): Status => {
+    exportTexLocal(doc()); // same validation as the .tex export
+    printDoc(doc());
+    return null;
+  };
+
+  const pdf = () =>
+    run("PDF", () =>
+      withFallback(
+        async () => {
+          const { blob, filename } = await exportDoc("pdf", doc());
+          downloadBlob(blob, filename);
+        },
+        async () => {
+          print();
+          return { kind: "info", text: OFFLINE_PDF_HINT };
+        },
+      ),
+    );
+
+  const png = () =>
+    run("PNG", () =>
+      withFallback(
+        async () => {
+          const { blob, filename } = await exportDoc("png", doc());
+          downloadBlob(blob, filename);
+        },
+        async () => {
+          exportTexLocal(doc());
+          const { blob, filename } = await pngLocal(doc());
+          downloadBlob(blob, filename);
+        },
+      ),
+    );
+
   const preview = () =>
-    run("bản xem trước", async () => {
-      const { blob } = await exportDoc("pdf", useDocStore.getState().doc);
-      onPreview(URL.createObjectURL(blob));
-    });
+    run("bản xem trước", () =>
+      withFallback(
+        async () => {
+          const { blob } = await exportDoc("pdf", doc());
+          onPreview(URL.createObjectURL(blob));
+        },
+        async () => print(),
+      ),
+    );
 
   const pdfToDrive = () =>
     run("PDF lên Drive", async () => {
-      const { blob, filename } = await exportDoc("pdf", useDocStore.getState().doc);
-      await uploadBlobToDrive(blob, filename);
+      try {
+        const { blob, filename } = await exportDoc("pdf", doc());
+        await uploadBlobToDrive(blob, filename);
+      } catch (e) {
+        if (isServerUnavailable(e)) {
+          return { kind: "error", text: "Cần máy chủ xuất PDF để lưu PDF lên Drive (đang ngoại tuyến?)." };
+        }
+        throw e;
+      }
     });
 
   return (
     <div className="export-menu" role="group" aria-label="Xuất file">
       <span className="group-label">Xuất:</span>
-      {(Object.keys(LABELS) as ExportKind[]).map((k) => (
-        <button key={k} type="button" disabled={busy !== null} onClick={() => void doExport(k)}>
-          {k === "tex" ? "LaTeX" : k.toUpperCase()}
-        </button>
-      ))}
+      <button type="button" disabled={busy !== null} onClick={() => void tex()}>
+        LaTeX
+      </button>
+      <button type="button" disabled={busy !== null} onClick={() => void pdf()}>
+        PDF
+      </button>
+      <button type="button" disabled={busy !== null} onClick={() => void png()}>
+        PNG
+      </button>
       <button type="button" disabled={busy !== null} onClick={() => void preview()} title="Xem trước bản in">
         Xem trước
       </button>
-      {signedIn ? (
+      <button
+        type="button"
+        disabled={busy !== null}
+        onClick={() => void run("bản in", async () => print())}
+        title="In hoặc lưu PDF ngay trên máy, không cần mạng"
+      >
+        In
+      </button>
+      {signedIn && SERVER_ENABLED ? (
         <button type="button" disabled={busy !== null} onClick={() => void pdfToDrive()}>
           Lưu PDF lên Drive
         </button>

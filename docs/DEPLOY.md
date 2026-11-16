@@ -1,5 +1,19 @@
 # Triển khai MathPad
 
+## Chỉ bản web (PWA), không cần máy chủ
+
+Đây là cách rẻ nhất để dùng cá nhân và chia sẻ bạn bè. Mọi thứ chạy trên thiết bị: soạn bài, lưu, xuất `.tex`, In/Lưu PDF, PNG.
+
+**GitHub Pages:** repo public miễn phí, repo private cần gói trả phí.
+1. Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+2. (Tùy chọn) Settings → Secrets and variables → Actions → **Variables**: `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_APP_ID` để bật Drive, và `VITE_API_BASE` nếu có máy chủ xuất PDF.
+3. Actions → "Deploy PWA to GitHub Pages" → **Run workflow**. Link sẽ là `https://<tên-tài-khoản>.github.io/<tên-repo>/`.
+4. Nếu dùng Drive: thêm origin `https://<tên-tài-khoản>.github.io` vào OAuth client (mục 1 bên dưới).
+
+**Cloudflare Pages / Netlify** (miễn phí, chạy được với repo private): build command `cd frontend && npm ci && npm run build`, output `frontend/dist`. Đặt biến `VITE_EXPORT_SERVER=off`, hoặc `VITE_API_BASE=…` nếu có máy chủ.
+
+## Đầy đủ: PWA và máy chủ xuất PDF LaTeX
+
 Phương án đề xuất, **cần người chốt**: frontend tĩnh trên **Cloudflare Pages**, backend là một container trên **Google Cloud Run** (hoặc Fly.io) với 1 GB RAM.
 
 ## 0. Thông tin cần chuẩn bị
