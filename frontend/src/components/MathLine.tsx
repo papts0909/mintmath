@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MathfieldElement } from "mathlive";
 import "mathlive/fonts.css";
 import { fromDisplay, toDisplay } from "../core/displayLatex";
@@ -9,6 +9,7 @@ import { interceptStrayKey, takeBuffered } from "./keyBuffer";
 import { isCoarsePointer, setupVirtualKeyboard } from "./touch";
 import {
   commaInStructure,
+  expandPendingShortcut,
   maybeAutoSubscript,
   semicolonInStructure,
   tabInStructure,
@@ -67,8 +68,13 @@ function focusNow(mf: MathfieldElement): void {
 export default function MathLine(props: Props) {
   const { line, focused, focusNonce, focusEdge } = props;
   const ref = useRef<MathfieldElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
+  /** Text an input method (e.g. a Vietnamese IME on macOS) is still composing. */
+  const [imeText, setImeText] = useState("");
+  /** Letters typed in a row just before the caret (to recognise shortcut words). */
+  const typedLetters = useRef("");
 
   // One-time setup.
   useEffect(() => {
@@ -108,6 +114,64 @@ export default function MathLine(props: Props) {
       mf.removeEventListener("input", onInput);
       mf.removeEventListener("move-out", onMoveOut);
       mf.removeEventListener("focusin", onFocusIn);
+    };
+  }, []);
+
+  // Input methods. Math input is plain ASCII, but a Vietnamese IME on macOS
+  // (marked text) still composes every keystroke, and MathLive's own handling
+  // of composition breaks "/" and repeats characters. Keep composition away
+  // from MathLive, preview it ourselves, and replay the committed text as
+  // keystrokes so shortcuts, fractions and superscripts work as usual.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const mf = ref.current;
+    if (!wrap || !mf) return;
+    const sink = () => mf.shadowRoot?.querySelector<HTMLElement>("[part=keyboard-sink]") ?? null;
+    let composing = false;
+    const onStart = (e: Event) => {
+      composing = true;
+      e.stopPropagation();
+      setImeText("");
+    };
+    const onUpdate = (e: Event) => {
+      e.stopPropagation();
+      setImeText((e as CompositionEvent).data ?? "");
+    };
+    const onEnd = (e: Event) => {
+      e.stopPropagation();
+      composing = false;
+      setImeText("");
+      const text = (e as CompositionEvent).data ?? "";
+      const el = sink();
+      if (el) el.textContent = "";
+      if (text) {
+        // One character at a time: MathLive applies "/" (fraction), "^" etc.
+        // per keystroke. Shortcut words ("mat", "Rbb") are expanded afterwards.
+        for (const ch of text) mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
+        typedLetters.current = /[A-Za-z]+$/.exec(text)?.[0] ?? "";
+        if (expandPendingShortcut(mf, SHORTCUTS)) typedLetters.current = "";
+        propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
+      }
+    };
+    const onInputDuringComposition = (e: Event) => {
+      const ie = e as InputEvent;
+      if (composing || ie.isComposing || ie.inputType?.includes("Composition")) {
+        e.stopPropagation();
+        if (e.type === "beforeinput" && ie.cancelable && ie.inputType !== "insertCompositionText")
+          e.preventDefault();
+      }
+    };
+    wrap.addEventListener("compositionstart", onStart, true);
+    wrap.addEventListener("compositionupdate", onUpdate, true);
+    wrap.addEventListener("compositionend", onEnd, true);
+    wrap.addEventListener("beforeinput", onInputDuringComposition, true);
+    wrap.addEventListener("input", onInputDuringComposition, true);
+    return () => {
+      wrap.removeEventListener("compositionstart", onStart, true);
+      wrap.removeEventListener("compositionupdate", onUpdate, true);
+      wrap.removeEventListener("compositionend", onEnd, true);
+      wrap.removeEventListener("beforeinput", onInputDuringComposition, true);
+      wrap.removeEventListener("input", onInputDuringComposition, true);
     };
   }, []);
 
@@ -152,6 +216,8 @@ export default function MathLine(props: Props) {
     const mf = ref.current;
     if (!mf) return;
     const p = propsRef.current;
+    // Keys belonging to an IME composition are handled by the composition events.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (interceptStrayKey(p.line.id, e)) {
       e.preventDefault();
       e.stopPropagation();
@@ -168,8 +234,22 @@ export default function MathLine(props: Props) {
       return;
     }
     const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+    // Track the word being typed so Tab/Space can tell a shortcut just ended.
+    const word = typedLetters.current;
+    typedLetters.current = plain && /^[A-Za-z]$/.test(e.key) ? word + e.key : "";
     let handled = false;
-    if (plain && e.key === ",") handled = commaInStructure(mf);
+    if (plain && !e.shiftKey && (e.key === "Tab" || e.key === " ") && word) {
+      const endsWithShortcut = Object.keys(SHORTCUTS).some((t) => /^[A-Za-z]+$/.test(t) && word.endsWith(t));
+      if (endsWithShortcut) {
+        // MathLive may already have expanded it (first cell selected): Tab/Space
+        // then just confirms and keeps the caret there. Otherwise expand now.
+        handled = true;
+        if (mf.selectionIsCollapsed) expandPendingShortcut(mf, SHORTCUTS);
+      }
+    }
+    if (handled) {
+      // fall through to the shared handled branch below
+    } else if (plain && e.key === ",") handled = commaInStructure(mf);
     else if (plain && e.key === ";") handled = semicolonInStructure(mf);
     else if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === "Tab") {
       handled = tabInStructure(mf, e.shiftKey);
@@ -196,6 +276,7 @@ export default function MathLine(props: Props) {
 
   return (
     <div
+      ref={wrapRef}
       className="math-line"
       onKeyDownCapture={onKeyDownCapture}
       onPasteCapture={onPasteCapture}
@@ -204,6 +285,11 @@ export default function MathLine(props: Props) {
       }}
     >
       <math-field ref={ref} data-line-id={line.id} aria-label="Dòng toán" />
+      {imeText ? (
+        <span className="ime-preview" aria-live="polite" title="Bộ gõ đang soạn">
+          {imeText}
+        </span>
+      ) : null}
     </div>
   );
 }

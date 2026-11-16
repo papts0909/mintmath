@@ -163,3 +163,30 @@ export function maybeAutoSubscript(mf: MathfieldElement, digit: string): boolean
   mf.executeCommand(["insert", `_{${digit}}`]);
   return true;
 }
+
+/** Number of `\\placeholder` in a LaTeX string. */
+export function countPlaceholdersIn(latex: string): number {
+  return countPlaceholders(latex, latex.length);
+}
+
+/** If the letters just before the caret spell a shortcut trigger that MathLive
+ *  has not expanded yet, replace them with the shortcut and select its first
+ *  placeholder. Returns true when something was expanded. */
+export function expandPendingShortcut(mf: MathfieldElement, shortcuts: Record<string, string>): boolean {
+  if (!mf.selectionIsCollapsed || mf.mode !== "math") return false;
+  const pos = mf.position;
+  let letters = "";
+  for (let k = 1; k <= 12 && pos - k >= 0; k++) {
+    const ch = mf.getValue(pos - k, pos - k + 1, "latex");
+    if (!/^[A-Za-z]$/.test(ch)) break;
+    letters = ch + letters;
+  }
+  if (!letters) return false;
+  const trigger = Object.keys(shortcuts)
+    .filter((t) => /^[A-Za-z]+$/.test(t) && letters.endsWith(t))
+    .sort((a, b) => b.length - a.length)[0];
+  if (!trigger) return false;
+  mf.selection = { ranges: [[pos - trigger.length, pos]], direction: "forward" };
+  mf.insert(shortcuts[trigger], { format: "latex", selectionMode: "placeholder" });
+  return true;
+}
