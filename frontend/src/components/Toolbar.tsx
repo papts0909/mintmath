@@ -1,6 +1,9 @@
 import { useRef } from "react";
 import { downloadBlob } from "../api/exportClient";
-import { docFileName, DocFormatError, isDocEmpty, parseDocText, serializeDoc } from "../core/docFormat";
+import { docFileName, DocFormatError, serializeDoc } from "../core/docFormat";
+import { ACCEPTED_FILES, importFile } from "../core/fileImport";
+import { newId } from "../core/id";
+import { getDoc } from "../core/library";
 import { useDocStore } from "../core/docStore";
 import type { Settings } from "../core/persistence";
 import {
@@ -14,12 +17,14 @@ import {
 import { copyLines } from "./Editor";
 import ExportMenu from "./ExportMenu";
 import InstallBar from "./InstallBar";
+import { switchToDoc } from "./LibraryPanel";
 
 interface Props {
   savedLocally: boolean;
   settings: Settings;
   onSettings: (s: Settings) => void;
   onToggleShortcuts: () => void;
+  onToggleLibrary: () => void;
   onPreview: (url: string) => void;
   onMessage: (text: string) => void;
 }
@@ -34,11 +39,8 @@ export default function Toolbar(props: Props) {
   const drive = useDriveUi();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const newDoc = () => {
-    const st = useDocStore.getState();
-    if (!isDocEmpty(st.doc) && !window.confirm("Tạo tài liệu mới? Nội dung hiện tại sẽ bị thay thế.")) return;
-    st.newDoc();
-  };
+  // The open document is kept in the library, so starting a new one loses nothing.
+  const newDoc = () => void switchToDoc(() => useDocStore.getState().newDoc());
 
   const download = () => {
     const doc = useDocStore.getState().doc;
@@ -47,11 +49,15 @@ export default function Toolbar(props: Props) {
 
   const openLocal = async (file: File) => {
     try {
-      const doc = parseDocText(await file.text());
-      const st = useDocStore.getState();
-      if (!isDocEmpty(st.doc) && st.dirty && !confirmDiscard()) return;
-      st.loadDoc(doc);
-      props.onMessage(`Đã mở ${file.name}`);
+      const r = await importFile(file);
+      if (r.kind === "doc") {
+        const doc = r.doc;
+        // Opening an older copy must not overwrite the library's version.
+        const existing = await getDoc(doc.id).catch(() => null);
+        if (existing && existing.updatedAt !== doc.updatedAt) doc.id = newId();
+        await switchToDoc(() => useDocStore.getState().loadDoc(doc));
+      }
+      props.onMessage(r.message);
     } catch (e) {
       props.onMessage(e instanceof DocFormatError ? e.message : "Không đọc được tệp.");
     }
@@ -78,16 +84,23 @@ export default function Toolbar(props: Props) {
       </div>
       <div className="toolbar-row">
         <div role="group" aria-label="Tệp">
+          <button type="button" onClick={props.onToggleLibrary} title="Các bài đã lưu trên máy này">
+            📚 Thư viện
+          </button>
           <button type="button" onClick={newDoc}>
             Tài liệu mới
           </button>
-          <button type="button" onClick={() => fileInput.current?.click()}>
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            title=".mathpad.json, .tex hoặc bản sao lưu"
+          >
             Mở tệp
           </button>
           <input
             ref={fileInput}
             type="file"
-            accept=".json,.mathpad.json,application/json"
+            accept={ACCEPTED_FILES}
             hidden
             data-testid="open-file"
             onChange={(e) => {

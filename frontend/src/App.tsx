@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Editor from "./components/Editor";
+import LibraryPanel from "./components/LibraryPanel";
 import ShortcutPanel from "./components/ShortcutPanel";
 import Toolbar from "./components/Toolbar";
 import TouchBar from "./components/TouchBar";
@@ -12,7 +13,10 @@ import {
   saveSettings,
   type Settings,
 } from "./core/persistence";
+import { putDoc, requestPersistentStorage } from "./core/library";
 import { saveToDrive, useDriveUi } from "./drive/driveActions";
+
+let persistAsked = false;
 
 // Restore the last session before the first render.
 const restored = loadLocal();
@@ -22,6 +26,7 @@ export default function App() {
   const [savedLocally, setSavedLocally] = useState(true);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -30,6 +35,17 @@ export default function App() {
       createAutosaver(() => {
         const st = useDocStore.getState();
         saveLocal({ doc: st.doc, driveFileId: st.driveFileId });
+        // Every document also lives in the on-device library.
+        putDoc(st.doc)
+          .then((stored) => {
+            if (stored && !persistAsked) {
+              persistAsked = true;
+              void requestPersistentStorage();
+            }
+          })
+          .catch(() => {
+            /* IndexedDB unavailable (e.g. private mode): localStorage still holds it */
+          });
         setSavedLocally(true);
       }),
     [],
@@ -119,6 +135,7 @@ export default function App() {
         settings={settings}
         onSettings={updateSettings}
         onToggleShortcuts={() => setShowShortcuts((v) => !v)}
+        onToggleLibrary={() => setShowLibrary((v) => !v)}
         onPreview={(url) => {
           if (previewUrl) URL.revokeObjectURL(previewUrl);
           setPreviewUrl(url);
@@ -128,6 +145,7 @@ export default function App() {
       <TouchBar />
       <main className="workspace">
         <Editor autoSubscript={settings.autoSubscript} />
+        {showLibrary ? <LibraryPanel onClose={() => setShowLibrary(false)} onMessage={setToast} /> : null}
         {showShortcuts ? <ShortcutPanel onClose={() => setShowShortcuts(false)} /> : null}
       </main>
       {previewUrl ? (
