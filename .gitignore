@@ -11,3 +11,4 @@ frontend/test-results/
 frontend/playwright-report/
 spikes/**/*.png
 frontend/_spike*.mjs
+*.tsbuildinfo
