@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "id": "empty",
+  "title": "",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "math",
+      "content": ""
+    }
+  ]
+}
