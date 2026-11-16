@@ -1,5 +1,6 @@
 """Build-time warm-up: compile a document that uses every template package."""
 
+import logging
 import time
 
 from app.models import Doc
@@ -28,6 +29,7 @@ SAMPLE = {
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO)
     tex = build_tex(Doc.model_validate(SAMPLE))
     for attempt in range(2):
         start = time.perf_counter()

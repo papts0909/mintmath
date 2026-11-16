@@ -1,5 +1,6 @@
 """Compile a .tex string into PDF bytes with Tectonic (fallback: xelatex)."""
 
+import logging
 import os
 import re
 import shutil
@@ -9,6 +10,8 @@ from pathlib import Path
 
 from .errors import CompileTimeout, LineError
 from .tex_builder import line_id_for_tex_line
+
+log = logging.getLogger("mathpad.compiler")
 
 COMPILE_TIMEOUT_S = float(os.environ.get("MATHPAD_COMPILE_TIMEOUT", "20"))
 
@@ -31,7 +34,8 @@ def _command(engine: list[str], tex_name: str) -> list[str]:
     exe = Path(engine[0]).name
     if exe.startswith("tectonic"):
         # No shell-escape (Tectonic disables it unless -Z shell-escape is given).
-        return [*engine, "-X", "compile", "--keep-logs", "--chatter", "minimal", tex_name]
+        # Classic CLI. --untrusted disables shell-escape and other unsafe features.
+        return [*engine, "--untrusted", "--keep-logs", "--chatter", "minimal", tex_name]
     return [*engine, "-no-shell-escape", "-interaction=nonstopmode", "-halt-on-error", tex_name]
 
 
@@ -80,7 +84,9 @@ def compile_pdf(tex: str, timeout: float | None = None) -> bytes:
         pdf = work / "doc.pdf"
         if proc.returncode != 0 or not pdf.exists():
             log_path = work / "doc.log"
-            log = log_path.read_text(errors="replace") if log_path.exists() else ""
+            tex_log = log_path.read_text(errors="replace") if log_path.exists() else ""
             output = proc.stdout.decode(errors="replace") + proc.stderr.decode(errors="replace")
-            raise parse_error(tex, output + "\n" + log)
+            detail = (output + "\n" + tex_log)[-3000:]
+            log.warning("TeX failed (exit %s):\n%s", proc.returncode, detail)
+            raise parse_error(tex, output + "\n" + tex_log)
         return pdf.read_bytes()
