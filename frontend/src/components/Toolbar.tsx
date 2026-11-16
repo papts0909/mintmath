@@ -187,6 +187,14 @@ export default function Toolbar(props: Props) {
             />
             d1 → d₁
           </label>
+          <label title="Sửa lỗi gõ toán khi đang bật bộ gõ tiếng Việt (Telex/VNI) trên macOS. Tắt nếu gõ bị lỗi.">
+            <input
+              type="checkbox"
+              checked={props.settings.imeFix}
+              onChange={(e) => props.onSettings({ ...props.settings, imeFix: e.target.checked })}
+            />
+            Sửa bộ gõ TV
+          </label>
           <label>
             Giao diện{" "}
             <select

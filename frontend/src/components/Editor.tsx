@@ -7,6 +7,7 @@ import TextLine from "./TextLine";
 
 interface Props {
   autoSubscript: boolean;
+  imeFix: boolean;
 }
 
 const isMod = (e: React.KeyboardEvent) => e.ctrlKey || e.metaKey;
@@ -20,7 +21,7 @@ export async function copyLines(lines: Line[]): Promise<boolean> {
   }
 }
 
-export default function Editor({ autoSubscript }: Props) {
+export default function Editor({ autoSubscript, imeFix }: Props) {
   const lines = useDocStore((s) => s.doc.lines);
   const focusedLineId = useDocStore((s) => s.focusedLineId);
   const focusNonce = useDocStore((s) => s.focusNonce);
@@ -209,7 +210,7 @@ export default function Editor({ autoSubscript }: Props) {
             </button>
             <div className="line-body">
               {line.type === "math" ? (
-                <MathLine {...shared} autoSubscript={autoSubscript} />
+                <MathLine {...shared} autoSubscript={autoSubscript} imeFix={imeFix} />
               ) : (
                 <TextLine {...shared} />
               )}

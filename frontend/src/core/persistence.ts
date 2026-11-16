@@ -62,11 +62,13 @@ export function createAutosaver(
 
 export interface Settings {
   autoSubscript: boolean;
+  /** Handle IME (e.g. Vietnamese Telex) composition in math lines ourselves. */
+  imeFix: boolean;
   theme: "system" | "light" | "dark";
 }
 
 export const SETTINGS_KEY = "mathpad.settings.v1";
-export const DEFAULT_SETTINGS: Settings = { autoSubscript: true, theme: "system" };
+export const DEFAULT_SETTINGS: Settings = { autoSubscript: true, imeFix: true, theme: "system" };
 
 export function loadSettings(storage: Storage = localStorage): Settings {
   try {
@@ -76,6 +78,7 @@ export function loadSettings(storage: Storage = localStorage): Settings {
     return {
       autoSubscript:
         typeof data.autoSubscript === "boolean" ? data.autoSubscript : DEFAULT_SETTINGS.autoSubscript,
+      imeFix: typeof data.imeFix === "boolean" ? data.imeFix : DEFAULT_SETTINGS.imeFix,
       theme:
         data.theme === "light" || data.theme === "dark" || data.theme === "system"
           ? data.theme

@@ -137,8 +137,8 @@ describe("persistence", () => {
   });
 
   it("settings round-trip and validate", () => {
-    saveSettings({ autoSubscript: false, theme: "dark" });
-    expect(loadSettings()).toEqual({ autoSubscript: false, theme: "dark" });
+    saveSettings({ autoSubscript: false, imeFix: false, theme: "dark" });
+    expect(loadSettings()).toEqual({ autoSubscript: false, imeFix: false, theme: "dark" });
     localStorage.setItem("mathpad.settings.v1", JSON.stringify({ theme: "pink" }));
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
   });

@@ -165,7 +165,7 @@ export default function App() {
       />
       <TouchBar />
       <main className="workspace">
-        <Editor autoSubscript={settings.autoSubscript} />
+        <Editor autoSubscript={settings.autoSubscript} imeFix={settings.imeFix} />
         {showLibrary ? <LibraryPanel onClose={() => setShowLibrary(false)} onMessage={setToast} /> : null}
         {showShortcuts ? <ShortcutPanel onClose={() => setShowShortcuts(false)} /> : null}
       </main>

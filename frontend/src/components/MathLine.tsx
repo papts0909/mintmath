@@ -46,6 +46,8 @@ interface Props {
   focusNonce: number;
   focusEdge: FocusEdge;
   autoSubscript: boolean;
+  /** Handle Vietnamese/other IME composition ourselves (see effect below). */
+  imeFix: boolean;
   onChange: (content: string) => void;
   onFocus: () => void;
   /** Return true if the key was handled at the document level. */
@@ -66,9 +68,8 @@ function focusNow(mf: MathfieldElement): void {
 }
 
 export default function MathLine(props: Props) {
-  const { line, focused, focusNonce, focusEdge } = props;
+  const { line, focused, focusNonce, focusEdge, imeFix } = props;
   const ref = useRef<MathfieldElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   /** Text an input method (e.g. a Vietnamese IME on macOS) is still composing. */
@@ -118,62 +119,74 @@ export default function MathLine(props: Props) {
   }, []);
 
   // Input methods. Math input is plain ASCII, but a Vietnamese IME on macOS
-  // (marked text) still composes every keystroke, and MathLive's own handling
-  // of composition breaks "/" and repeats characters. Keep composition away
-  // from MathLive, preview it ourselves, and replay the committed text as
-  // keystrokes so shortcuts, fractions and superscripts work as usual.
+  // (marked text) composes every keystroke. MathLive inserts a whole committed
+  // string at once (so "1/2" breaks) and, in WebKit, also handles keystrokes
+  // that belong to the composition (repeated characters). When imeFix is on:
+  // composition never reaches MathLive; we preview it and replay the committed
+  // text key by key. Listeners sit on the field's shadow root in the capture
+  // phase: that is on the event path even when the browser does not let
+  // composition events leave the shadow tree (WebKit), and runs before
+  // MathLive's own listeners on its keyboard sink.
   useEffect(() => {
-    const wrap = wrapRef.current;
     const mf = ref.current;
-    if (!wrap || !mf) return;
-    const sink = () => mf.shadowRoot?.querySelector<HTMLElement>("[part=keyboard-sink]") ?? null;
+    const root = mf?.shadowRoot;
+    if (!mf || !root || !imeFix) return;
+    const sink = () => root.querySelector<HTMLElement>("[part=keyboard-sink]");
     let composing = false;
+    const commit = (text: string) => {
+      const el = sink();
+      if (el) el.textContent = "";
+      if (!text) return;
+      for (const ch of text) mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
+      typedLetters.current = /[A-Za-z]+$/.exec(text)?.[0] ?? "";
+      if (expandPendingShortcut(mf, SHORTCUTS)) typedLetters.current = "";
+      propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
+    };
     const onStart = (e: Event) => {
-      composing = true;
       e.stopPropagation();
+      composing = true;
       setImeText("");
     };
     const onUpdate = (e: Event) => {
       e.stopPropagation();
+      composing = true;
       setImeText((e as CompositionEvent).data ?? "");
     };
     const onEnd = (e: Event) => {
       e.stopPropagation();
       composing = false;
       setImeText("");
-      const text = (e as CompositionEvent).data ?? "";
-      const el = sink();
-      if (el) el.textContent = "";
-      if (text) {
-        // One character at a time: MathLive applies "/" (fraction), "^" etc.
-        // per keystroke. Shortcut words ("mat", "Rbb") are expanded afterwards.
-        for (const ch of text) mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
-        typedLetters.current = /[A-Za-z]+$/.exec(text)?.[0] ?? "";
-        if (expandPendingShortcut(mf, SHORTCUTS)) typedLetters.current = "";
-        propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
-      }
+      commit((e as CompositionEvent).data ?? "");
     };
-    const onInputDuringComposition = (e: Event) => {
+    const onKey = (e: Event) => {
+      const ke = e as KeyboardEvent;
+      // Keystrokes the IME is consuming: not for MathLive (no preventDefault,
+      // the IME still needs them).
+      if (composing || ke.isComposing || ke.keyCode === 229 || ke.key === "Process") e.stopPropagation();
+    };
+    const onInputEvent = (e: Event) => {
       const ie = e as InputEvent;
-      if (composing || ie.isComposing || ie.inputType?.includes("Composition")) {
-        e.stopPropagation();
-        if (e.type === "beforeinput" && ie.cancelable && ie.inputType !== "insertCompositionText")
-          e.preventDefault();
-      }
+      if (composing || ie.isComposing || (ie.inputType ?? "").includes("Composition")) e.stopPropagation();
     };
-    wrap.addEventListener("compositionstart", onStart, true);
-    wrap.addEventListener("compositionupdate", onUpdate, true);
-    wrap.addEventListener("compositionend", onEnd, true);
-    wrap.addEventListener("beforeinput", onInputDuringComposition, true);
-    wrap.addEventListener("input", onInputDuringComposition, true);
+    const opts = { capture: true } as const;
+    root.addEventListener("compositionstart", onStart, opts);
+    root.addEventListener("compositionupdate", onUpdate, opts);
+    root.addEventListener("compositionend", onEnd, opts);
+    root.addEventListener("keydown", onKey, opts);
+    root.addEventListener("keypress", onKey, opts);
+    root.addEventListener("beforeinput", onInputEvent, opts);
+    root.addEventListener("input", onInputEvent, opts);
     return () => {
-      wrap.removeEventListener("compositionstart", onStart, true);
-      wrap.removeEventListener("compositionupdate", onUpdate, true);
-      wrap.removeEventListener("compositionend", onEnd, true);
-      wrap.removeEventListener("beforeinput", onInputDuringComposition, true);
-      wrap.removeEventListener("input", onInputDuringComposition, true);
+      root.removeEventListener("compositionstart", onStart, opts);
+      root.removeEventListener("compositionupdate", onUpdate, opts);
+      root.removeEventListener("compositionend", onEnd, opts);
+      root.removeEventListener("keydown", onKey, opts);
+      root.removeEventListener("keypress", onKey, opts);
+      root.removeEventListener("beforeinput", onInputEvent, opts);
+      root.removeEventListener("input", onInputEvent, opts);
+      setImeText("");
     };
-  }, []);
+  }, [imeFix]);
 
   // External content changes (undo, load) -> field.
   useEffect(() => {
@@ -276,7 +289,6 @@ export default function MathLine(props: Props) {
 
   return (
     <div
-      ref={wrapRef}
       className="math-line"
       onKeyDownCapture={onKeyDownCapture}
       onPasteCapture={onPasteCapture}
