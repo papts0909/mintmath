@@ -214,7 +214,9 @@ test("long text lines wrap; arrows leave only from the edge rows", async ({ page
   await page.keyboard.type("a");
   await page.keyboard.press("Enter");
   await page.keyboard.press("Control+'");
-  await page.keyboard.type("Đây là một dòng chữ rất dài để kiểm tra việc xuống dòng tự động trong ô văn bản hẹp.");
+  await page.keyboard.type(
+    "Đây là một dòng chữ rất dài để kiểm tra việc xuống dòng tự động trong ô văn bản hẹp.",
+  );
   await page.keyboard.press("Enter");
   await page.keyboard.type("b");
   const box = await page.locator("textarea.text-line").first().boundingBox();

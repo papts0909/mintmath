@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Drive E2E tests fake Google entirely; any client id switches the UI on.
+process.env.VITE_GOOGLE_CLIENT_ID ??= "e2e-fake-client-id";
+
 const backendCmd =
   process.env.MATHPAD_BACKEND_CMD ??
   "cd ../backend && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000";
@@ -25,6 +28,7 @@ export default defineConfig({
     },
     {
       command: "npx vite --port 5173 --strictPort",
+      env: { VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID },
       url: "http://localhost:5173",
       reuseExistingServer: true,
       timeout: 60_000,
