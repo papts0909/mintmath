@@ -64,11 +64,12 @@ test("a LaTeX error highlights the offending line", async ({ page }) => {
   await page.getByRole("button", { name: "PDF", exact: true }).click();
   await expect(page.locator("[data-testid=line]").nth(2)).toHaveClass(/has-error/);
   await expect(page.locator(".line-error")).toBeVisible();
-  // Editing the line clears the highlight.
+  // Editing the offending line clears its highlight.
   await page.locator("math-field").nth(1).click();
   await page.keyboard.press("End");
   await page.keyboard.type("y");
-  await expect(page.locator(".has-error")).toHaveCount(1);
+  await expect(page.locator(".has-error")).toHaveCount(0);
+  await expect(page.locator(".line-error")).toHaveCount(0);
 });
 
 test("print preview shows the PDF in the page", async ({ page }) => {
