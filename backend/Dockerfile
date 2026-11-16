@@ -25,9 +25,10 @@ COPY warmup ./warmup
 
 # Compile a sample once so every TeX package/font lands in the cache at build time;
 # at runtime no network access is needed for the usual packages.
-RUN python -m warmup.warmup && chmod -R a+rX /opt/cache
+RUN python -m warmup.warmup
 
-RUN useradd --create-home --uid 10001 mathpad
+# Tectonic also writes to its cache at run time (locks, format files).
+RUN useradd --create-home --uid 10001 mathpad && chown -R mathpad /opt/cache
 USER mathpad
 ENV XDG_CACHE_HOME=/opt/cache
 
