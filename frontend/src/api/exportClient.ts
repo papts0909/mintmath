@@ -94,6 +94,11 @@ export function downloadBlob(blob: Blob, filename: string): void {
     void import("../native").then(({ shareFileNative }) => shareFileNative(blob, filename));
     return;
   }
+  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+    // Desktop app: native Save dialog.
+    void import("../native").then(({ saveFileDesktop }) => saveFileDesktop(blob, filename));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

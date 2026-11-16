@@ -4,3 +4,5 @@ test-results
 playwright-report
 package-lock.json
 android
+src-tauri/target
+src-tauri/gen

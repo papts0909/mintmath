@@ -72,6 +72,10 @@ Trên màn cảm ứng:
 | PNG | Ảnh khổ A4 dựng trên máy | Ảnh từ PDF LaTeX |
 | In | Luôn chạy trên máy | |
 
+## App máy tính (.dmg, .exe)
+
+Workflow **Desktop apps** build file `.dmg` (macOS, chip Apple và Intel) và `.exe`/`.msi` (Windows) bằng Tauri. Cách tải, cài (app chưa ký số) và tự build: [docs/DESKTOP.md](docs/DESKTOP.md).
+
 ## App Android (APK)
 
 Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) mỗi khi frontend thay đổi. Cách tải, cài và ký: [docs/ANDROID.md](docs/ANDROID.md). Trong app Android: không có Google Drive; xuất file qua bảng Chia sẻ; PDF tạo ngay trong app.
