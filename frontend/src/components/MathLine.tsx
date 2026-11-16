@@ -33,6 +33,8 @@ export interface LineKeyContext {
   isEmpty: boolean;
   /** Let the field handle undo/redo itself. */
   fieldUndo: (redo: boolean) => void;
+  /** Push the field's current value to the store. */
+  sync: () => void;
 }
 
 interface Props {
@@ -50,6 +52,15 @@ interface Props {
 }
 
 const SHORTCUTS = inlineShortcutMap();
+
+/** mf.focus() defers the real focus by ~60 ms; focusing the keyboard sink
+ *  directly is synchronous, so no keystroke goes astray. */
+function focusNow(mf: MathfieldElement): void {
+  if (document.activeElement === mf) return;
+  const sink = mf.shadowRoot?.querySelector<HTMLElement>("[part=keyboard-sink]");
+  if (sink) sink.focus();
+  else mf.focus();
+}
 
 export default function MathLine(props: Props) {
   const { line, focused, focusNonce, focusEdge } = props;
@@ -115,11 +126,7 @@ export default function MathLine(props: Props) {
     const apply = () => {
       if (!mf.isConnected) return;
       if (!isActive() && tries === 0) {
-        // mf.focus() defers the real focus by ~60 ms; focusing the keyboard
-        // sink directly is synchronous, so no keystroke goes astray.
-        const sink = mf.shadowRoot?.querySelector<HTMLElement>("[part=keyboard-sink]");
-        if (sink) sink.focus();
-        else mf.focus();
+        focusNow(mf);
         mf.position = focusEdge === "start" ? 0 : mf.lastOffset;
       }
       if (!isActive() && tries++ < 40) {
@@ -149,6 +156,7 @@ export default function MathLine(props: Props) {
     const ctx: LineKeyContext = {
       isEmpty: mf.getValue("latex").trim() === "",
       fieldUndo: (redo) => undoSkippingProbes(mf, redo),
+      sync: () => p.onChange(mf.getValue("latex")),
     };
     if (p.onKey(e, ctx)) {
       e.preventDefault();
@@ -183,7 +191,14 @@ export default function MathLine(props: Props) {
   };
 
   return (
-    <div className="math-line" onKeyDownCapture={onKeyDownCapture} onPasteCapture={onPasteCapture}>
+    <div
+      className="math-line"
+      onKeyDownCapture={onKeyDownCapture}
+      onPasteCapture={onPasteCapture}
+      onPointerDown={() => {
+        if (ref.current) focusNow(ref.current);
+      }}
+    >
       <math-field ref={ref} data-line-id={line.id} aria-label="Dòng toán" />
     </div>
   );

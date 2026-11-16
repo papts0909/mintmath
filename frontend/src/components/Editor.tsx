@@ -34,6 +34,9 @@ export default function Editor({ autoSubscript }: Props) {
 
   const handleKey = (line: Line, e: React.KeyboardEvent, ctx: LineKeyContext): boolean => {
     if (e.nativeEvent.isComposing) return false;
+    const structuralKey =
+      e.key === "Enter" || isMod(e) || (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown"));
+    if (structuralKey) ctx.sync();
     const st = api();
     const idx = st.doc.lines.findIndex((l) => l.id === line.id);
     const k = e.key;
