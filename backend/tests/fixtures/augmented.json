@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "id": "aug",
+  "title": "Ma trận bổ sung",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "math",
+      "content": "\\left[\\begin{array}{ccc|c}1&1&2&3\\\\2&3&5&7\\\\1&1&m^{2}+1&m+2\\end{array}\\right]"
+    },
+    {
+      "id": "l2",
+      "type": "math",
+      "content": "\\augmented{1}{\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}}"
+    },
+    {
+      "id": "l3",
+      "type": "math",
+      "content": "\\begin{pmatrix}\\placeholder{}&1\\\\0&\\placeholder{}\\end{pmatrix}\\begin{vmatrix}a&b\\\\c&d\\end{vmatrix}"
+    }
+  ]
+}

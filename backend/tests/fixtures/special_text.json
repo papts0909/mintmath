@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "id": "special",
+  "title": "Ký tự $ đặc biệt & # _ % ^ ~ {}",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "text",
+      "content": "Chi phí 100$ & 50% giảm giá, mã #A_1, a^b ~ c {x} \\ cuối."
+    },
+    {
+      "id": "l2",
+      "type": "text",
+      "content": "Tiếng Việt: Ăn quả nhớ kẻ trồng cây — ỹ ữ ặ ở đ Đ ℝ ∀ ⇒"
+    },
+    {
+      "id": "l3",
+      "type": "text",
+      "content": ""
+    },
+    {
+      "id": "l4",
+      "type": "math",
+      "content": ""
+    }
+  ]
+}

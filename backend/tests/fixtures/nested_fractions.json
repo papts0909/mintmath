@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "frac",
+  "title": "Phân số lồng nhau",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "math",
+      "content": "\\frac{1}{1+\\frac{1}{1+\\frac{1}{x}}}=\\frac{\\frac{a}{b}+\\frac{c}{d}}{\\frac{e}{f}}"
+    },
+    {
+      "id": "l2",
+      "type": "math",
+      "content": "\\dfrac{\\sqrt{x^{2}+1}}{\\sqrt[3]{x}}\\ge\\frac{1}{2}"
+    }
+  ]
+}

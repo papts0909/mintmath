@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "id": "sample",
+  "title": "Giải và biện luận hệ phương trình",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "text",
+      "content": "Giải và biện luận hệ phương trình sau theo tham số m ∈ ℝ:"
+    },
+    {
+      "id": "l2",
+      "type": "math",
+      "content": "\\begin{cases}x+y+2z=3\\\\2x+3y+5z=7\\\\x+y+\\left(m^{2}+1\\right)z=m+2\\end{cases}"
+    },
+    {
+      "id": "l3",
+      "type": "text",
+      "content": "Ma trận bổ sung của hệ:"
+    },
+    {
+      "id": "l4",
+      "type": "math",
+      "content": "\\overline{A}=\\left[\\begin{array}{ccc|c}1&1&2&3\\\\2&3&5&7\\\\1&1&m^{2}+1&m+2\\end{array}\\right]"
+    },
+    {
+      "id": "l5",
+      "type": "math",
+      "content": "\\xrightarrow[d_{3}\\to d_{3}-d_{1}]{d_{2}\\to d_{2}-2d_{1}}\\left[\\begin{array}{ccc|c}1&1&2&3\\\\0&1&1&1\\\\0&0&m^{2}-1&m-1\\end{array}\\right]"
+    },
+    {
+      "id": "l6",
+      "type": "text",
+      "content": "Biện luận:"
+    },
+    {
+      "id": "l7",
+      "type": "math",
+      "content": "m^{2}-1=0"
+    },
+    {
+      "id": "l8",
+      "type": "math",
+      "content": "\\Leftrightarrow m=\\pm1",
+      "joinPrev": true
+    },
+    {
+      "id": "l9",
+      "type": "text",
+      "content": "• Nếu m ≠ ±1 thì hệ có nghiệm duy nhất:"
+    },
+    {
+      "id": "l10",
+      "type": "math",
+      "content": "z=\\frac{m-1}{m^{2}-1}=\\frac{1}{m+1},\\quad y=1-z=\\frac{m}{m+1},\\quad x=3-y-2z=\\frac{2m+1}{m+1}"
+    },
+    {
+      "id": "l11",
+      "type": "text",
+      "content": "• Nếu m = 1: hệ có vô số nghiệm"
+    },
+    {
+      "id": "l12",
+      "type": "math",
+      "content": "\\begin{cases}x=2-z\\\\y=1-z\\\\z\\in\\mathbb{R}\\end{cases}"
+    },
+    {
+      "id": "l13",
+      "type": "text",
+      "content": "• Nếu m = −1: phương trình cuối trở thành 0z = −2, hệ vô nghiệm."
+    }
+  ]
+}

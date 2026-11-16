@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "id": "sys",
+  "title": "Hệ phương trình",
+  "updatedAt": "2026-11-16T00:00:00Z",
+  "lines": [
+    {
+      "id": "l1",
+      "type": "text",
+      "content": "Giải hệ:"
+    },
+    {
+      "id": "l2",
+      "type": "math",
+      "content": "\\begin{cases}2x-y=1\\\\x+3y=11\\end{cases}\\Rightarrow\\begin{cases}x=2\\\\y=3\\end{cases}"
+    },
+    {
+      "id": "l3",
+      "type": "math",
+      "content": "\\forall x\\in\\R,\\;\\exists y\\in\\N: x\\neq y"
+    }
+  ]
+}
