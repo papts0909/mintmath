@@ -12,6 +12,7 @@ import {
   createB2Client,
   DEFAULT_PREFIX,
   normalizePrefix,
+  parseEndpoint,
   type B2Client,
   type B2Config,
   type RemoteObject,
@@ -110,17 +111,35 @@ export const useB2 = create<B2State>()(() => ({
 }));
 
 export function describeB2Error(e: unknown): string {
-  if (e instanceof B2Error) {
-    if (e.kind === "network" && !isNativeApp() && typeof location !== "undefined") {
-      return (
-        "Không kết nối được tới B2. Kiểm tra mạng; với bản web, bucket cần quy tắc CORS cho địa chỉ " +
-        `${location.origin} (xem hướng dẫn bên dưới).`
-      );
-    }
-    return e.message;
-  }
+  if (e instanceof B2Error) return e.message;
   if (e instanceof DocFormatError) return e.message;
   return e instanceof Error ? e.message : "Lỗi không xác định.";
+}
+
+/** In a browser a failed request is either the network (offline, a firewall
+ *  blocking B2) or a missing CORS rule; the browser hides which. A no-cors
+ *  request to the same host tells them apart: it succeeds unless the host is
+ *  unreachable. */
+export async function explainNetworkError(cfg: B2Config): Promise<string> {
+  if (isNativeApp()) return "Không kết nối được tới B2. Kiểm tra mạng.";
+  const ep = parseEndpoint(cfg.endpoint);
+  let reachable = false;
+  if (ep) {
+    try {
+      await fetch(`https://${ep.host}/`, { mode: "no-cors", cache: "no-store" });
+      reachable = true;
+    } catch {
+      reachable = false;
+    }
+  }
+  return reachable
+    ? `B2 chặn trang này vì bucket chưa có quy tắc CORS cho địa chỉ ${location.origin}. ` +
+        "Chạy “node scripts/b2-cors.mjs” (xem hướng dẫn) rồi thử lại."
+    : `Không tới được ${ep?.host ?? "B2"}: máy đang mất mạng, hoặc mạng (tường lửa công ty) chặn Backblaze.`;
+}
+
+async function messageFor(e: unknown, cfg: B2Config): Promise<string> {
+  return e instanceof B2Error && e.kind === "network" ? explainNetworkError(cfg) : describeB2Error(e);
 }
 
 async function run<T>(
@@ -137,7 +156,7 @@ async function run<T>(
   try {
     return await fn(client(cfg), cfg);
   } catch (e) {
-    useB2.setState({ message: { kind: "error", text: describeB2Error(e) } });
+    useB2.setState({ message: { kind: "error", text: await messageFor(e, cfg) } });
     return undefined;
   } finally {
     useB2.setState({ busy: null });
@@ -157,7 +176,7 @@ export async function connectB2(cfg: B2Config): Promise<boolean> {
     await refreshB2();
     return true;
   } catch (e) {
-    useB2.setState({ message: { kind: "error", text: describeB2Error(e) } });
+    useB2.setState({ message: { kind: "error", text: await messageFor(e, full) } });
     return false;
   } finally {
     useB2.setState({ busy: null });
