@@ -18,6 +18,7 @@ import {
   type RemoteObject,
 } from "./b2";
 import { DOC_SUFFIX, docIdFromKey, docKey, planSync, type SyncState } from "./b2Sync";
+import { setMathpadCors } from "../../scripts/b2-cors.mjs";
 
 const CONFIG_KEY = "mathpad.b2.v1";
 const SYNC_KEY = "mathpad.b2.sync.v1";
@@ -94,12 +95,21 @@ function client(cfg: B2Config): B2Client {
 
 type Msg = { kind: "info" | "error"; text: string } | null;
 
+/** Set when the browser was blocked by a missing CORS rule: the settings to
+ *  retry with, and whether enabling it from the app already failed. */
+export interface CorsNeeded {
+  cfg: B2Config;
+  origin: string;
+  autoFailed: boolean;
+}
+
 interface B2State {
   config: B2Config | null;
   busy: string | null;
   message: Msg;
   files: RemoteObject[] | null;
   savedAt: Date | null;
+  cors: CorsNeeded | null;
 }
 
 export const useB2 = create<B2State>()(() => ({
@@ -108,6 +118,7 @@ export const useB2 = create<B2State>()(() => ({
   message: null,
   files: null,
   savedAt: null,
+  cors: null,
 }));
 
 export function describeB2Error(e: unknown): string {
@@ -120,8 +131,11 @@ export function describeB2Error(e: unknown): string {
  *  blocking B2) or a missing CORS rule; the browser hides which. A no-cors
  *  request to the same host tells them apart: it succeeds unless the host is
  *  unreachable. */
-export async function explainNetworkError(cfg: B2Config): Promise<string> {
-  if (isNativeApp()) return "Không kết nối được tới B2. Kiểm tra mạng.";
+export async function explainNetworkError(
+  cfg: B2Config,
+): Promise<{ kind: "cors" | "network"; text: string }> {
+  if (isNativeApp())
+    return { kind: "network", text: "Không kết nối được tới B2. Kiểm tra mạng rồi thử lại." };
   const ep = parseEndpoint(cfg.endpoint);
   let reachable = false;
   if (ep) {
@@ -133,13 +147,24 @@ export async function explainNetworkError(cfg: B2Config): Promise<string> {
     }
   }
   return reachable
-    ? `B2 chặn trang này vì bucket chưa có quy tắc CORS cho địa chỉ ${location.origin}. ` +
-        "Chạy “node scripts/b2-cors.mjs” (xem hướng dẫn) rồi thử lại."
-    : `Không tới được ${ep?.host ?? "B2"}: máy đang mất mạng, hoặc mạng (tường lửa công ty) chặn Backblaze.`;
+    ? {
+        kind: "cors",
+        text:
+          `Bucket ${cfg.bucket} chưa cho phép trang ${location.origin} truy cập (thiếu quy tắc CORS). ` +
+          "Làm theo hướng dẫn “Bật truy cập cho bản web” bên dưới — chỉ cần làm một lần.",
+      }
+    : {
+        kind: "network",
+        text: `Không tới được ${ep?.host ?? "B2"}: máy đang mất mạng, hoặc mạng (ví dụ tường lửa công ty) chặn Backblaze. Thử mạng khác, hoặc dùng app trên điện thoại.`,
+      };
 }
 
+/** Error text for the UI; a missing CORS rule also opens the CORS helper. */
 async function messageFor(e: unknown, cfg: B2Config): Promise<string> {
-  return e instanceof B2Error && e.kind === "network" ? explainNetworkError(cfg) : describeB2Error(e);
+  if (!(e instanceof B2Error && e.kind === "network")) return describeB2Error(e);
+  const why = await explainNetworkError(cfg);
+  if (why.kind === "cors") useB2.setState({ cors: { cfg, origin: location.origin, autoFailed: false } });
+  return why.text;
 }
 
 async function run<T>(
@@ -172,7 +197,11 @@ export async function connectB2(cfg: B2Config): Promise<boolean> {
   try {
     await client(full).test();
     saveB2Config(full);
-    useB2.setState({ config: full, message: { kind: "info", text: `Đã kết nối bucket ${full.bucket}.` } });
+    useB2.setState({
+      config: full,
+      cors: null,
+      message: { kind: "info", text: `Đã kết nối bucket ${full.bucket}.` },
+    });
     await refreshB2();
     return true;
   } catch (e) {
@@ -183,6 +212,73 @@ export async function connectB2(cfg: B2Config): Promise<boolean> {
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+let corsRetryDelayMs = 3000;
+/** Tests shorten the wait for B2 to apply new CORS rules. */
+export function _setCorsRetryDelay(ms: number): void {
+  corsRetryDelayMs = ms;
+}
+
+/** Add the MathPad CORS rule for this page's address to the bucket, using a
+ *  key that may change bucket settings (e.g. the Master Application Key).
+ *  The key is used for this call only and never stored. Then connect again. */
+export async function enableCorsFromApp(admin: { keyId: string; appKey: string }): Promise<boolean> {
+  const need = useB2.getState().cors;
+  if (!need) return false;
+  useB2.setState({ busy: "Đang bật truy cập cho bản web…", message: null });
+  try {
+    await setMathpadCors({
+      keyId: admin.keyId.trim(),
+      appKey: admin.appKey.trim(),
+      bucketName: need.cfg.bucket,
+      origins: [need.origin],
+    });
+  } catch (e) {
+    const network = (e as { code?: string }).code === "network";
+    useB2.setState({
+      busy: null,
+      cors: { ...need, autoFailed: need.autoFailed || network },
+      message: {
+        kind: "error",
+        text: network
+          ? "Trình duyệt không cho trang này tự đổi cài đặt bucket (hoặc mạng chặn Backblaze). Dùng cách 2 bên dưới."
+          : describeCorsError(e),
+      },
+    });
+    return false;
+  }
+  // B2 can take a few seconds to apply the new rule.
+  useB2.setState({ busy: "Đã bật. Đang kết nối lại…" });
+  for (let i = 0; i < 4; i++) {
+    await sleep(i === 0 ? 300 : corsRetryDelayMs);
+    try {
+      await client(need.cfg).test();
+      return connectB2(need.cfg);
+    } catch {
+      /* not applied yet */
+    }
+  }
+  useB2.setState({
+    busy: null,
+    message: {
+      kind: "info",
+      text: "Đã bật truy cập cho bản web. Backblaze có thể cần một phút để áp dụng: tải lại trang rồi bấm Kết nối.",
+    },
+  });
+  return false;
+}
+
+function describeCorsError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg.startsWith("Đăng nhập B2"))
+    return "Backblaze không nhận khóa này. Kiểm tra lại keyID và applicationKey của Master Application Key.";
+  if (/không có quyền sửa bucket/.test(msg))
+    return "Khóa này không được phép đổi cài đặt bucket. Dùng Master Application Key (xem hướng dẫn ở trên).";
+  if (/Không tìm thấy bucket/.test(msg))
+    return `${msg} Kiểm tra tên bucket, và khóa phải thuộc đúng tài khoản Backblaze đó.`;
+  return msg;
+}
+
 export function disconnectB2(): void {
   saveB2Config(null);
   saveSyncState({});
@@ -190,6 +286,7 @@ export function disconnectB2(): void {
     config: null,
     files: null,
     savedAt: null,
+    cors: null,
     message: { kind: "info", text: "Đã ngắt kết nối B2." },
   });
 }

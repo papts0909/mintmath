@@ -6,6 +6,7 @@ import {
   deleteFromB2,
   disconnectB2,
   downloadFromB2,
+  enableCorsFromApp,
   openFromB2,
   refreshB2,
   saveCurrentToB2,
@@ -116,11 +117,13 @@ function ConnectForm() {
             <b>Application Keys → Add a New Application Key</b>: chỉ cho phép bucket vừa tạo, quyền{" "}
             <b>Read and Write</b>. Chép <b>keyID</b> và <b>applicationKey</b> (khóa chỉ hiện một lần).
           </li>
+          <li>
+            Mở bucket vừa tạo, chép dòng <b>Endpoint</b> và tên bucket vào đây rồi bấm <b>Kết nối</b>.
+          </li>
           {isNativeApp() ? null : (
             <li>
-              Bản web cần quy tắc CORS trên bucket cho địa chỉ <code>{location.origin}</code>. Trên máy có
-              Node, trong thư mục <code>frontend</code> chạy <code>node scripts/b2-cors.mjs</code> (dùng
-              Master Application Key). App máy tính và Android không cần bước này. Chi tiết: docs/B2.md.
+              Bản web: lần đầu kết nối, bucket cần cho phép địa chỉ <code>{location.origin}</code>. Nếu chưa,
+              app sẽ hiện hướng dẫn bật (làm một lần). App máy tính và Android không cần bước này.
             </li>
           )}
         </ol>
@@ -129,6 +132,139 @@ function ConnectForm() {
         </p>
       </details>
     </form>
+  );
+}
+
+function CopyLine({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <span className="b2-cmd">
+      <code>{text}</code>
+      <button
+        type="button"
+        aria-label={`Chép lệnh ${label}`}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            window.prompt("Chép lệnh này:", text);
+          }
+        }}
+      >
+        {copied ? "Đã chép" : "Chép"}
+      </button>
+    </span>
+  );
+}
+
+/** Shown when the browser was blocked by a missing CORS rule on the bucket. */
+function CorsHelp() {
+  const cors = useB2((s) => s.cors);
+  const busy = useB2((s) => s.busy);
+  const [keyId, setKeyId] = useState("");
+  const [appKey, setAppKey] = useState("");
+  if (!cors) return null;
+  const scriptUrl = new URL(`${import.meta.env.BASE_URL}b2-cors.mjs`, location.origin).href;
+  const run = `node b2-cors.mjs --bucket ${cors.cfg.bucket} --origin ${cors.origin}`;
+  const masterLabel = "của Master Application Key";
+
+  const steps2 = (
+    <ol>
+      <li>
+        Cài <b>Node.js</b> (bản LTS) từ nodejs.org nếu máy chưa có. Máy nào cũng được, không cần là máy đang
+        dùng.
+      </li>
+      <li>
+        Mở <b>Terminal</b> (macOS) hoặc <b>PowerShell</b> (Windows), chạy lần lượt:
+        <CopyLine label="tải (macOS)" text={`curl -fsSLO ${scriptUrl}`} />
+        <span className="muted small">Trên Windows dùng:</span>
+        <CopyLine label="tải (Windows)" text={`curl.exe -fsSLO ${scriptUrl}`} />
+        <CopyLine label="chạy" text={run} />
+      </li>
+      <li>
+        Lệnh hỏi keyID và applicationKey: dán Master Application Key (như cách 1). Thấy “✔ Đã đặt CORS” là
+        xong, quay lại đây bấm <b>Thử kết nối lại</b>.
+      </li>
+    </ol>
+  );
+
+  return (
+    <section className="b2-cors" aria-label="Bật truy cập cho bản web">
+      <strong>Bật truy cập cho bản web (làm một lần)</strong>
+      <p>
+        Trình duyệt chỉ cho MathPad đọc và lưu bài trong bucket <b>{cors.cfg.bucket}</b> khi bucket cho phép
+        địa chỉ <code>{cors.origin}</code>. App máy tính và app Android không cần bước này.
+      </p>
+
+      <h4>Cách 1: để MathPad tự bật</h4>
+      <ol>
+        <li>
+          Vào backblaze.com → <b>Application Keys</b>. Ở mục <b>Master Application Key</b>, bấm{" "}
+          <b>Generate New Master Application Key</b> rồi chép keyID và applicationKey. (Khóa dùng trong app
+          chỉ có quyền đọc/ghi tệp, không đổi được cài đặt bucket. Tạo Master key mới sẽ làm Master key cũ hết
+          hiệu lực.)
+        </li>
+        <li>Dán vào đây và bấm nút bên dưới.</li>
+      </ol>
+      <form
+        className="b2-form"
+        aria-label="Bật truy cập cho bản web"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (keyId.trim() && appKey.trim())
+            void enableCorsFromApp({ keyId, appKey }).then((ok) => {
+              if (ok) {
+                setKeyId("");
+                setAppKey("");
+              }
+            });
+        }}
+      >
+        <label>
+          keyID {masterLabel}
+          <input
+            value={keyId}
+            onChange={(e) => setKeyId(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </label>
+        <label>
+          applicationKey {masterLabel}
+          <input
+            type="password"
+            value={appKey}
+            onChange={(e) => setAppKey(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </label>
+        <button type="submit" className="primary" disabled={busy !== null || !keyId.trim() || !appKey.trim()}>
+          Bật truy cập và kết nối lại
+        </button>
+        <p className="muted small">
+          Master key chỉ dùng cho lần này để đổi cài đặt bucket. MathPad không lưu lại và không gửi đi đâu
+          ngoài Backblaze.
+        </p>
+      </form>
+
+      {cors.autoFailed ? (
+        <>
+          <h4>Cách 2: chạy một lệnh trên máy tính</h4>
+          {steps2}
+        </>
+      ) : (
+        <details className="b2-help">
+          <summary>Cách 2: chạy một lệnh trên máy tính</summary>
+          {steps2}
+        </details>
+      )}
+      <button type="button" disabled={busy !== null} onClick={() => void connectB2(cors.cfg)}>
+        Thử kết nối lại
+      </button>
+    </section>
   );
 }
 
@@ -163,6 +299,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
         </div>
         <ConnectForm />
         {status}
+        <CorsHelp />
       </div>
     );
   }
@@ -225,6 +362,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
       </div>
       {busy ? <p className="muted">{busy}</p> : null}
       {status}
+      <CorsHelp />
       {savedAt ? (
         <p className="muted small">
           Đã lưu lên B2 lúc {savedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}

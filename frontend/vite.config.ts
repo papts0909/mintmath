@@ -2,6 +2,27 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { readFileSync } from "node:fs";
+import type { Plugin } from "vite";
+
+// Serve the CORS setup script at <app>/b2-cors.mjs so people can download it
+// from the app itself (the app shows the command).
+function serveCorsScript(): Plugin {
+  const src = new URL("./scripts/b2-cors.mjs", import.meta.url);
+  return {
+    name: "mathpad-b2-cors-script",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.split("?")[0] !== `${server.config.base}b2-cors.mjs`) return next();
+        res.setHeader("Content-Type", "text/javascript; charset=utf-8");
+        res.end(readFileSync(src));
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "b2-cors.mjs", source: readFileSync(src) });
+    },
+  };
+}
 
 const backend = process.env.MATHPAD_BACKEND_URL ?? "http://localhost:8000";
 // Sub-path when hosted under e.g. https://user.github.io/mintmath/
@@ -11,6 +32,7 @@ export default defineConfig({
   base,
   plugins: [
     react(),
+    serveCorsScript(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false, // registered in src/pwa.ts
