@@ -1,7 +1,7 @@
-// Set the CORS rule a Backblaze B2 bucket needs for the MathPad web app / PWA.
+// Set the CORS rule a Backblaze B2 bucket needs for the MintMath web app / PWA.
 // Needs only Node 18+ (built-in fetch). No B2 CLI, no other install.
 // The web app also serves this file (…/b2-cors.mjs) and imports its core
-// (setMathpadCors) to enable CORS from the browser, so the top of the module
+// (setMintmathCors) to enable CORS from the browser, so the top of the module
 // must stay free of Node-only imports.
 //
 //   node b2-cors.mjs
@@ -10,10 +10,12 @@
 //
 // It asks for a keyID / applicationKey that may edit bucket settings (the
 // Master Application Key, or a key with the listBuckets + writeBuckets
-// capabilities), the bucket name and the web addresses MathPad runs on.
+// capabilities), the bucket name and the web addresses MintMath runs on.
 // Existing CORS rules of the bucket are kept; only the rule named
-// "mathpad-web" is added or replaced.
-export const RULE_NAME = "mathpad-web";
+// "mintmath-web" (or the old "mathpad-web") is added or replaced.
+export const RULE_NAME = "mintmath-web";
+/** Rule name used before the app was renamed (MathPad); replaced by ours. */
+const LEGACY_RULE_NAME = "mathpad-web";
 
 export const DEFAULT_ORIGINS = [
   "https://papts0909.github.io",
@@ -21,8 +23,8 @@ export const DEFAULT_ORIGINS = [
   "http://localhost:5173",
 ];
 
-/** The CORS rule MathPad's S3 calls need: signed list/get/put/delete. */
-export function mathpadRule(origins) {
+/** The CORS rule MintMath's S3 calls need: signed list/get/put/delete. */
+export function mintmathRule(origins) {
   return {
     corsRuleName: RULE_NAME,
     allowedOrigins: origins,
@@ -51,12 +53,10 @@ export function parseOrigins(text) {
 
 /** Keep other rules; add ours, keeping origins it already allowed. */
 export function mergeRules(existing, rule) {
-  const prev = (existing ?? []).find((r) => r.corsRuleName === rule.corsRuleName);
+  const ours = (r) => r.corsRuleName === rule.corsRuleName || r.corsRuleName === LEGACY_RULE_NAME;
+  const prev = (existing ?? []).find(ours);
   const origins = [...new Set([...(prev?.allowedOrigins ?? []), ...rule.allowedOrigins])];
-  return [
-    ...(existing ?? []).filter((r) => r.corsRuleName !== rule.corsRuleName),
-    { ...rule, allowedOrigins: origins },
-  ];
+  return [...(existing ?? []).filter((r) => !ours(r)), { ...rule, allowedOrigins: origins }];
 }
 
 async function b2(fetchImpl, url, init, what) {
@@ -91,7 +91,7 @@ async function b2(fetchImpl, url, init, what) {
 }
 
 /** Authorize, find the bucket, update its CORS rules. Returns the new rules. */
-export async function setMathpadCors({ keyId, appKey, bucketName, origins }, fetchImpl = fetch) {
+export async function setMintmathCors({ keyId, appKey, bucketName, origins }, fetchImpl = fetch) {
   const auth = await b2(
     fetchImpl,
     "https://api.backblazeb2.com/b2api/v3/b2_authorize_account",
@@ -109,7 +109,7 @@ export async function setMathpadCors({ keyId, appKey, bucketName, origins }, fet
   );
   const bucket = list.buckets?.[0];
   if (!bucket) throw new Error(`Không tìm thấy bucket "${bucketName}" trong tài khoản này.`);
-  const corsRules = mergeRules(bucket.corsRules, mathpadRule(origins));
+  const corsRules = mergeRules(bucket.corsRules, mintmathRule(origins));
   const updated = await b2(
     fetchImpl,
     `${apiUrl}/b2api/v3/b2_update_bucket`,
@@ -170,7 +170,7 @@ async function main() {
     return rl.question(q);
   };
   try {
-    console.log("Đặt CORS cho bucket Backblaze B2 để dùng MathPad bản web.\n");
+    console.log("Đặt CORS cho bucket Backblaze B2 để dùng MintMath bản web.\n");
     const keyId = (
       given.keyId ?? (await ask("keyID (Master Application Key hoặc khóa có quyền writeBuckets): "))
     ).trim();
@@ -180,15 +180,15 @@ async function main() {
       given.origins.length || complete
         ? given.origins.join(" ")
         : await ask(
-            `Địa chỉ web của MathPad (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
+            `Địa chỉ web của MintMath (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
           );
     if (!keyId || !appKey || !bucketName) throw new Error("Cần keyID, applicationKey và tên bucket.");
     const origins = [...new Set([...parseOrigins(extra), ...DEFAULT_ORIGINS])];
-    const rules = await setMathpadCors({ keyId, appKey, bucketName, origins });
+    const rules = await setMintmathCors({ keyId, appKey, bucketName, origins });
     const mine = rules.find((r) => r.corsRuleName === RULE_NAME);
     console.log("\n✔ Đã đặt CORS cho bucket", bucketName);
     console.log("  Cho phép các địa chỉ:", (mine?.allowedOrigins ?? origins).join(", "));
-    console.log("  Mở lại MathPad và bấm Kết nối (có thể cần tải lại trang).");
+    console.log("  Mở lại MintMath và bấm Kết nối (có thể cần tải lại trang).");
   } catch (e) {
     console.error("\n✘", e instanceof Error ? e.message : e);
     process.exitCode = 1;

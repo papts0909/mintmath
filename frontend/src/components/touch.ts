@@ -1,5 +1,5 @@
 // Touch-device support: when to show MathLive's on-screen keyboard and the
-// extra "MathPad" keyboard layout with structures and set/logic symbols.
+// extra "MintMath" keyboard layout with structures and set/logic symbols.
 import type { VirtualKeyboardLayout } from "mathlive";
 import { toDisplay } from "../core/displayLatex";
 import { buildEnv } from "../core/matrix";
@@ -9,9 +9,9 @@ export const isCoarsePointer = (): boolean =>
 
 const sym = (latex: string, tooltip?: string) => ({ latex, ...(tooltip ? { tooltip } : {}) });
 
-export const MATHPAD_LAYOUT: VirtualKeyboardLayout = {
-  label: "MathPad",
-  tooltip: "Ký hiệu và cấu trúc MathPad",
+export const MINTMATH_LAYOUT: VirtualKeyboardLayout = {
+  label: "MintMath",
+  tooltip: "Ký hiệu và cấu trúc MintMath",
   rows: [
     [
       sym("\\forall", "với mọi"),
@@ -75,5 +75,5 @@ let configured = false;
 export function setupVirtualKeyboard(): void {
   if (configured || typeof window === "undefined" || !window.mathVirtualKeyboard) return;
   configured = true;
-  window.mathVirtualKeyboard.layouts = [MATHPAD_LAYOUT, "numeric", "symbols", "alphabetic", "greek"];
+  window.mathVirtualKeyboard.layouts = [MINTMATH_LAYOUT, "numeric", "symbols", "alphabetic", "greek"];
 }

@@ -8,7 +8,7 @@ export class ExportError extends Error {
     message: string,
     readonly status: number,
     readonly lineId: string | null = null,
-    /** True when the response did not come from the MathPad export API. */
+    /** True when the response did not come from the MintMath export API. */
     readonly noServer = false,
   ) {
     super(message);
@@ -84,7 +84,7 @@ export async function exportDoc(
   }
   if (!res.ok) throw await errorFrom(res);
   const blob = await res.blob();
-  const fallback = `mathpad.${kind === "png" && blob.type === "application/zip" ? "zip" : kind}`;
+  const fallback = `mintmath.${kind === "png" && blob.type === "application/zip" ? "zip" : kind}`;
   return { blob, filename: filenameFromDisposition(res.headers.get("Content-Disposition"), fallback) };
 }
 

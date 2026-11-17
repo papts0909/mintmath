@@ -1,6 +1,6 @@
 # Build the desktop apps with Tauri:
-#   macOS  -> MathPad_<ver>_universal.dmg (Apple Silicon + Intel)
-#   Windows -> MathPad_<ver>_x64-setup.exe and .msi
+#   macOS  -> MintMath_<ver>_universal.dmg (Apple Silicon + Intel)
+#   Windows -> MintMath_<ver>_x64-setup.exe and .msi
 # Files are attached to the run ("Artifacts"); tags v* also publish a Release.
 name: Desktop apps
 
@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MathPad-${{ matrix.name }}-${{ github.run_number }}
+          name: MintMath-${{ matrix.name }}-${{ github.run_number }}
           path: ${{ matrix.out }}
           retention-days: 30
 

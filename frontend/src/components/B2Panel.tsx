@@ -13,7 +13,7 @@ import {
   uploadFileToB2,
   useB2,
 } from "../cloud/b2Actions";
-import { DOC_SUFFIX, displayName } from "../cloud/b2Sync";
+import { displayName, isDocKey } from "../cloud/b2Sync";
 import { useDocStore } from "../core/docStore";
 import { isNativeApp } from "../native";
 import { switchToDoc } from "./LibraryPanel";
@@ -27,8 +27,9 @@ const fmtDate = (iso: string) => {
 const fmtSize = (n: number) =>
   n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 
-/** Readable name for a MathPad document key: "Ten-bai__id.mathpad.json" -> "Ten bai". */
-const docLabel = (name: string) => name.replace(/__[A-Za-z0-9_-]+\.mathpad\.json$/, "").replace(/-/g, " ");
+/** Readable name for a MintMath document key: "Ten-bai__id.mintmath.json" -> "Ten bai". */
+const docLabel = (name: string) =>
+  name.replace(/__[A-Za-z0-9_-]+\.(?:mintmath|mathpad)\.json$/, "").replace(/-/g, " ");
 
 function ConnectForm() {
   const busy = useB2((s) => s.busy);
@@ -180,7 +181,7 @@ function CorsHelp() {
     <section className="b2-cors" aria-label="Bật truy cập cho bản web">
       <strong>Bật truy cập cho bản web (làm một lần)</strong>
       <p>
-        Trình duyệt chỉ cho MathPad đọc và lưu bài trong bucket <b>{bucket}</b> khi bucket cho phép địa chỉ{" "}
+        Trình duyệt chỉ cho MintMath đọc và lưu bài trong bucket <b>{bucket}</b> khi bucket cho phép địa chỉ{" "}
         <code>{cors.origin}</code>. Backblaze không cho đổi cài đặt này từ trang web, nên cần chạy một lệnh
         ngắn (khoảng 1 phút, không cài thêm gì). App máy tính và app Android không cần bước này.
       </p>
@@ -188,7 +189,7 @@ function CorsHelp() {
         <li>
           <b>Lấy Master Application Key:</b> vào backblaze.com → <b>Application Keys</b> → mục{" "}
           <b>Master Application Key</b> → <b>Generate New Master Application Key</b>. Để trang đó mở, lát nữa
-          chép keyID và applicationKey. (Khóa đang dùng trong MathPad không có quyền đổi cài đặt bucket. Tạo
+          chép keyID và applicationKey. (Khóa đang dùng trong MintMath không có quyền đổi cài đặt bucket. Tạo
           Master key mới làm Master key cũ hết hiệu lực.)
         </li>
         <li>
@@ -228,7 +229,7 @@ function CorsHelp() {
       </ol>
       <p className="muted small">
         Máy không mở được Terminal/PowerShell (ví dụ máy công ty)? Mở shell.cloud.google.com bằng tài khoản
-        Google, dán lệnh macOS / Linux vào đó. Hoặc dùng MathPad trên điện thoại Android.
+        Google, dán lệnh macOS / Linux vào đó. Hoặc dùng MintMath trên điện thoại Android.
       </p>
       <button type="button" disabled={busy !== null} onClick={() => void connectB2(cors.cfg)}>
         Thử kết nối lại
@@ -274,8 +275,8 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
   }
 
   const prefix = config.prefix;
-  const docs = (files ?? []).filter((f) => f.key.endsWith(DOC_SUFFIX));
-  const others = (files ?? []).filter((f) => !f.key.endsWith(DOC_SUFFIX) && !f.key.endsWith("/"));
+  const docs = (files ?? []).filter((f) => isDocKey(f.key));
+  const others = (files ?? []).filter((f) => !isDocKey(f.key) && !f.key.endsWith("/"));
 
   const open = async (key: string) => {
     const doc = await openFromB2(key);
@@ -338,7 +339,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
         </p>
       ) : null}
 
-      <h3>Bài MathPad ({docs.length})</h3>
+      <h3>Bài MintMath ({docs.length})</h3>
       {files === null ? <p className="muted">Đang tải…</p> : null}
       {files && !docs.length ? (
         <p className="muted">Chưa có bài nào trên B2. Bấm “Lưu bài đang mở”.</p>

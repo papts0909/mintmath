@@ -1,7 +1,7 @@
-# MathPad: bật truy cập cho bản web trên bucket Backblaze B2 (quy tắc CORS).
+# MintMath: bật truy cập cho bản web trên bucket Backblaze B2 (quy tắc CORS).
 # Chỉ dùng PowerShell có sẵn trên Windows 10/11. Không cài gì.
-# MathPad hiện sẵn lệnh để chép, dạng:
-#   $s=(iwr -UseBasicParsing https://<địa chỉ MathPad>/b2-cors.ps1).RawContentStream.ToArray();
+# MintMath hiện sẵn lệnh để chép, dạng:
+#   $s=(iwr -UseBasicParsing https://<địa chỉ MintMath>/b2-cors.ps1).RawContentStream.ToArray();
 #   & ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($s))) -Bucket <tên> -Origin <địa chỉ>
 # Hỏi keyID / applicationKey của Master Application Key (không lưu ở đâu).
 param(
@@ -25,7 +25,7 @@ foreach ($o in $Origin) {
   $origins += $o
 }
 
-Write-Host "Bật truy cập cho bản web MathPad trên bucket $Bucket"
+Write-Host "Bật truy cập cho bản web MintMath trên bucket $Bucket"
 Write-Host ""
 $keyId = $env:B2_KEY_ID
 if (-not $keyId) { $keyId = Read-Host "keyID của Master Application Key" }
@@ -70,11 +70,11 @@ $b = @($list.buckets) | Select-Object -First 1
 if (-not $b) { Fail "Không thấy bucket `"$Bucket`" trong tài khoản này. Kiểm tra tên bucket (phân biệt chữ hoa/thường)."; return }
 
 # Giữ các quy tắc CORS khác và các địa chỉ đã cho phép trước đó.
-$rules = @(@($b.corsRules) | Where-Object { $_ -and $_.corsRuleName -ne "mathpad-web" })
-$old = @($b.corsRules) | Where-Object { $_ -and $_.corsRuleName -eq "mathpad-web" } | Select-Object -First 1
+$rules = @(@($b.corsRules) | Where-Object { $_ -and $_.corsRuleName -notin @("mintmath-web", "mathpad-web") })
+$old = @($b.corsRules) | Where-Object { $_ -and $_.corsRuleName -in @("mintmath-web", "mathpad-web") } | Select-Object -First 1
 if ($old) { $origins = @(@($old.allowedOrigins) + $origins | Select-Object -Unique) }
 $rules += [ordered]@{
-  corsRuleName      = "mathpad-web"
+  corsRuleName      = "mintmath-web"
   allowedOrigins    = [object[]]$origins
   allowedOperations = [object[]]@("s3_get", "s3_head", "s3_put", "s3_delete")
   allowedHeaders    = [object[]]@("*")
@@ -88,4 +88,4 @@ try {
 
 Write-Host ""
 Write-Host "✔ Xong. Bucket $Bucket đã cho phép: $($origins -join ', ')" -ForegroundColor Green
-Write-Host "  Quay lại MathPad, bấm “Thử kết nối lại” (Backblaze có thể cần khoảng 1 phút)."
+Write-Host "  Quay lại MintMath, bấm “Thử kết nối lại” (Backblaze có thể cần khoảng 1 phút)."

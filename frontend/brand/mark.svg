@@ -1,0 +1,14 @@
+<!-- MintMath symbol (from the "MintMath Logo" design canvas). Uses currentColor. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="62" y="52" width="11" height="96" fill="currentColor"/>
+  <rect x="127" y="52" width="11" height="96" fill="currentColor"/>
+  <g stroke="currentColor" fill="none">
+    <line x1="67.5" y1="52" x2="100" y2="112" stroke-width="2.6"/>
+    <line x1="100" y1="112" x2="132.5" y2="52" stroke-width="2.6"/>
+    <line x1="56" y1="52" x2="79" y2="52" stroke-width="1.6"/>
+    <line x1="121" y1="52" x2="144" y2="52" stroke-width="1.6"/>
+    <line x1="56" y1="148" x2="79" y2="148" stroke-width="1.6"/>
+    <line x1="121" y1="148" x2="144" y2="148" stroke-width="1.6"/>
+  </g>
+</svg>

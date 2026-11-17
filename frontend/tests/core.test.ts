@@ -38,7 +38,7 @@ describe("docFormat", () => {
   });
 
   it("rejects newer versions with a clear message", () => {
-    expect(() => parseDoc({ version: 2, lines: [] })).toThrow(/phiên bản MathPad mới hơn/);
+    expect(() => parseDoc({ version: 2, lines: [] })).toThrow(/phiên bản MintMath mới hơn/);
   });
 
   it.each([
@@ -73,8 +73,8 @@ describe("docFormat", () => {
   });
 
   it("names files", () => {
-    expect(docFileName(" Bài 1: hệ/phương trình ")).toBe("Bài_1_hệphương_trình.mathpad.json");
-    expect(docFileName("")).toBe("mathpad.mathpad.json");
+    expect(docFileName(" Bài 1: hệ/phương trình ")).toBe("Bài_1_hệphương_trình.mintmath.json");
+    expect(docFileName("")).toBe("mintmath.mintmath.json");
   });
 
   it("detects empty docs", () => {

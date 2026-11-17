@@ -1,7 +1,7 @@
 import { DOC_VERSION, type Doc, type Line, type LineType } from "./types";
 import { newId } from "./id";
 
-export const FILE_EXTENSION = ".mathpad.json";
+export const FILE_EXTENSION = ".mintmath.json";
 export const FILE_MIME = "application/json";
 
 export class DocFormatError extends Error {}
@@ -26,12 +26,12 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 /** Validate an unknown value (parsed JSON) and return a Doc, or throw DocFormatError. */
 export function parseDoc(value: unknown): Doc {
-  if (!isRecord(value)) throw new DocFormatError("Tệp không phải tài liệu MathPad.");
+  if (!isRecord(value)) throw new DocFormatError("Tệp không phải tài liệu MintMath.");
   const version = value.version;
   if (typeof version !== "number") throw new DocFormatError("Tệp thiếu số phiên bản.");
   if (version > DOC_VERSION) {
     throw new DocFormatError(
-      `Tệp được tạo bởi phiên bản MathPad mới hơn (định dạng v${version}); ` +
+      `Tệp được tạo bởi phiên bản MintMath mới hơn (định dạng v${version}); ` +
         `ứng dụng này chỉ hỗ trợ tới v${DOC_VERSION}. Hãy cập nhật ứng dụng.`,
     );
   }
@@ -81,7 +81,7 @@ export function docFileName(title: string): string {
       .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "")
       .trim()
       .replace(/\s+/g, "_")
-      .slice(0, 80) || "mathpad";
+      .slice(0, 80) || "mintmath";
   return stem + FILE_EXTENSION;
 }
 

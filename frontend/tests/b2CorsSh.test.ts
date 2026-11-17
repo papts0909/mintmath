@@ -74,7 +74,7 @@ const shells = ["dash", "bash"].filter((s) => spawnSync("sh", ["-c", `command -v
 describe.each(shells)("b2-cors.sh with %s", (shell) => {
   const keys = { B2_KEY_ID: "masterid", B2_APP_KEY: "mastersecret" };
 
-  it("sets the MathPad CORS rule for the given origins", async () => {
+  it("sets the MintMath CORS rule for the given origins", async () => {
     updates = [];
     existingRules = [];
     const r = await run(shell, ["DatNgo", "https://monglinhnguyendat.id.vn/", "http://localhost:5173"], keys);
@@ -86,7 +86,7 @@ describe.each(shells)("b2-cors.sh with %s", (shell) => {
         bucketId: "bkt_9",
         corsRules: [
           {
-            corsRuleName: "mathpad-web",
+            corsRuleName: "mintmath-web",
             allowedOrigins: ["https://monglinhnguyendat.id.vn", "http://localhost:5173"],
             allowedOperations: ["s3_get", "s3_head", "s3_put", "s3_delete"],
             allowedHeaders: ["*"],

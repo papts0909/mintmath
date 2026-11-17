@@ -6,7 +6,7 @@ test("installable manifest and service worker; works offline after first visit",
 }) => {
   await page.goto("/");
   const manifest = await (await page.request.get("/manifest.webmanifest")).json();
-  expect(manifest).toMatchObject({ short_name: "MathPad", display: "standalone", lang: "vi" });
+  expect(manifest).toMatchObject({ short_name: "MintMath", display: "standalone", lang: "vi" });
   expect(manifest.icons.map((i: { sizes: string }) => i.sizes)).toEqual(
     expect.arrayContaining(["192x192", "512x512"]),
   );

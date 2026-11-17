@@ -11,7 +11,7 @@ import type { Doc, Line } from "../core/types";
 const PRINT_ROOT_ID = "print-root";
 
 export function texFileName(title: string): string {
-  return docFileName(title).replace(/\.mathpad\.json$/, ".tex");
+  return docFileName(title).replace(/\.mintmath\.json$/, ".tex");
 }
 
 /** The .tex file, built on the device. Throws TexLineError for unsafe/invalid lines. */
@@ -78,7 +78,7 @@ function mountPrintRoot(doc: Doc): HTMLElement {
 export function printDoc(doc: Doc): void {
   const root = mountPrintRoot(doc);
   const previousTitle = document.title;
-  document.title = doc.title.trim() || "MathPad";
+  document.title = doc.title.trim() || "MintMath";
   const cleanup = () => {
     root.remove();
     document.title = previousTitle;

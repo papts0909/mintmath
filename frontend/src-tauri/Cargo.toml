@@ -1,7 +1,7 @@
 [package]
 name = "mathpad"
 version = "1.0.0"
-description = "MathPad – trình bày bài giải toán"
+description = "MintMath – trình bày bài giải toán"
 edition = "2021"
 
 [lib]

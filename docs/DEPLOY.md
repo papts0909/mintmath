@@ -1,4 +1,4 @@
-# Triển khai MathPad
+# Triển khai MintMath
 
 ## Chỉ bản web (PWA), không cần máy chủ
 
@@ -20,19 +20,19 @@ Phương án đề xuất, **cần người chốt**: frontend tĩnh trên **Clo
 
 | Giá trị | Ví dụ | Dùng ở |
 | --- | --- | --- |
-| Tên miền frontend | `https://mathpad.example.com` | `MATHPAD_CORS_ORIGINS`, CORS của bucket B2 |
-| URL backend | `https://mathpad-api-xxxx.a.run.app` | `VITE_API_BASE` |
+| Tên miền frontend | `https://mintmath.example.com` | `MATHPAD_CORS_ORIGINS`, CORS của bucket B2 |
+| URL backend | `https://mintmath-api-xxxx.a.run.app` | `VITE_API_BASE` |
 
 ## 1. Backend lên Cloud Run
 
 ```bash
 cd backend
-gcloud builds submit --tag REGION-docker.pkg.dev/PROJECT/mathpad/backend
-gcloud run deploy mathpad-api \
-  --image REGION-docker.pkg.dev/PROJECT/mathpad/backend \
+gcloud builds submit --tag REGION-docker.pkg.dev/PROJECT/mintmath/backend
+gcloud run deploy mintmath-api \
+  --image REGION-docker.pkg.dev/PROJECT/mintmath/backend \
   --region REGION --memory 1Gi --cpu 1 --concurrency 4 --timeout 60 \
   --allow-unauthenticated \
-  --set-env-vars MATHPAD_CORS_ORIGINS=https://mathpad.example.com,MATHPAD_TRUST_PROXY=1,MATHPAD_RATE_LIMIT=20
+  --set-env-vars MATHPAD_CORS_ORIGINS=https://mintmath.example.com,MATHPAD_TRUST_PROXY=1,MATHPAD_RATE_LIMIT=20
 ```
 
 - Image đã nạp sẵn cache gói TeX lúc build, nên lúc chạy không cần mạng ra ngoài.
@@ -46,7 +46,7 @@ Fly.io tương tự: `fly launch --dockerfile backend/Dockerfile`, đặt cùng 
 - Build command: `cd frontend && npm ci && npm run build`
 - Output directory: `frontend/dist`
 - Environment variables (build):
-  - `VITE_API_BASE=https://mathpad-api-xxxx.a.run.app`
+  - `VITE_API_BASE=https://mintmath-api-xxxx.a.run.app`
 
 Cách khác: đặt frontend và backend sau cùng một tên miền (ví dụ Cloudflare route `/api/*` về Cloud Run), khi đó để trống `VITE_API_BASE` và không cần CORS.
 

@@ -40,8 +40,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: false, // registered in src/pwa.ts
       manifest: {
-        name: "MathPad – Trình bày bài giải toán",
-        short_name: "MathPad",
+        name: "MintMath – Trình bày bài giải toán",
+        short_name: "MintMath",
         description: "Gõ bài giải toán theo từng dòng, xuất LaTeX, PDF, PNG.",
         lang: "vi",
         start_url: ".",

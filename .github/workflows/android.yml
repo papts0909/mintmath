@@ -66,12 +66,12 @@ jobs:
       - name: Name the APK
         run: |
           mkdir -p ../apk
-          cp android/app/build/outputs/apk/release/app-release.apk "../apk/MathPad-${{ github.run_number }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "../apk/MintMath-${{ github.run_number }}.apk"
           ls -la ../apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MathPad-apk-${{ github.run_number }}
+          name: MintMath-apk-${{ github.run_number }}
           path: apk/*.apk
           retention-days: 30
 
@@ -81,5 +81,5 @@ jobs:
         with:
           files: apk/*.apk
           body: |
-            Tải `MathPad-*.apk` về điện thoại Android rồi mở để cài
+            Tải `MintMath-*.apk` về điện thoại Android rồi mở để cài
             (cho phép "Cài ứng dụng không rõ nguồn gốc" khi được hỏi).

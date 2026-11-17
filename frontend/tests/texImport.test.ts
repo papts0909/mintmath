@@ -11,7 +11,7 @@ const load = (f: string) => JSON.parse(readFileSync(join(FIXTURES, f), "utf-8"))
 const view = (d: Doc) =>
   d.lines.map(({ type, content, joinPrev }) => ({ type, content, ...(joinPrev ? { joinPrev } : {}) }));
 
-describe("importTex: MathPad's own export round-trips", () => {
+describe("importTex: MintMath's own export round-trips", () => {
   it.each(fixtures)("%s: export → import → export is stable", (f) => {
     const tex = buildTex(load(f));
     const back = importTex(tex).doc;

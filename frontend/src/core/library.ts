@@ -17,7 +17,9 @@ export interface LibraryEntry {
   doc: Doc;
 }
 
-export const BACKUP_TYPE = "mathpad-library";
+export const BACKUP_TYPE = "mintmath-library";
+/** Backups made before the app was renamed (MathPad). */
+const LEGACY_BACKUP_TYPE = "mathpad-library";
 
 export interface LibraryBackup {
   type: typeof BACKUP_TYPE;
@@ -140,7 +142,7 @@ export function isBackup(value: unknown): value is { type: string; docs: unknown
   return (
     typeof value === "object" &&
     value !== null &&
-    (value as { type?: unknown }).type === BACKUP_TYPE &&
+    [BACKUP_TYPE, LEGACY_BACKUP_TYPE].includes((value as { type?: unknown }).type as string) &&
     Array.isArray((value as { docs?: unknown }).docs)
   );
 }
@@ -150,7 +152,7 @@ export function isBackup(value: unknown): value is { type: string; docs: unknown
 export async function importBackup(
   value: unknown,
 ): Promise<{ added: number; updated: number; skipped: number }> {
-  if (!isBackup(value)) throw new DocFormatError("Tệp không phải bản sao lưu thư viện MathPad.");
+  if (!isBackup(value)) throw new DocFormatError("Tệp không phải bản sao lưu thư viện MintMath.");
   let added = 0;
   let updated = 0;
   let skipped = 0;

@@ -1,4 +1,4 @@
-//! Desktop shell for MathPad: the web app in a native window, with a native
+//! Desktop shell for MintMath: the web app in a native window, with a native
 //! "Save as" dialog for exported files and native HTTP for Backblaze B2.
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -9,5 +9,5 @@ pub fn run() {
         // Backblaze B2 requests go through native HTTP (no browser CORS).
         .plugin(tauri_plugin_http::init())
         .run(tauri::generate_context!())
-        .expect("error while running MathPad");
+        .expect("error while running MintMath");
 }

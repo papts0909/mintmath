@@ -8,6 +8,7 @@ import { useDocStore } from "../core/docStore";
 import type { Settings } from "../core/persistence";
 import { saveCurrentToB2, useB2 } from "../cloud/b2Actions";
 import { copyLines } from "./Editor";
+import { Logo } from "./Logo";
 import ExportMenu from "./ExportMenu";
 import InstallBar from "./InstallBar";
 import { switchToDoc } from "./LibraryPanel";
@@ -76,7 +77,7 @@ export default function Toolbar(props: Props) {
   return (
     <header className="toolbar">
       <div className="toolbar-row">
-        <strong className="brand">MathPad</strong>
+        <Logo />
         <input
           className="title-input"
           type="text"
@@ -101,7 +102,7 @@ export default function Toolbar(props: Props) {
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            title=".mathpad.json, .tex hoặc bản sao lưu"
+            title=".mintmath.json, .tex hoặc bản sao lưu"
           >
             Mở tệp
           </button>

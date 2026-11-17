@@ -107,7 +107,7 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
     const day = new Date().toISOString().slice(0, 10);
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-      `mathpad-thu-vien-${day}.json`,
+      `mintmath-thu-vien-${day}.json`,
     );
     onMessage(`Đã sao lưu ${data.docs.length} bài`);
   };
@@ -175,7 +175,7 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
-              title=".tex, .mathpad.json hoặc bản sao lưu"
+              title=".tex, .mintmath.json hoặc bản sao lưu"
             >
               Nhập tệp
             </button>

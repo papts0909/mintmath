@@ -1,10 +1,10 @@
-# MathPad: bật truy cập cho bản web trên bucket Backblaze B2 (quy tắc CORS).
+# MintMath: bật truy cập cho bản web trên bucket Backblaze B2 (quy tắc CORS).
 # Chỉ dùng công cụ có sẵn trên macOS / Linux (sh, curl, grep, sed). Không cài gì.
 #
-#   curl -fsSL https://<địa chỉ MathPad>/b2-cors.sh | sh -s -- <tên-bucket> <địa-chỉ-web> [địa-chỉ-web…]
+#   curl -fsSL https://<địa chỉ MintMath>/b2-cors.sh | sh -s -- <tên-bucket> <địa-chỉ-web> [địa-chỉ-web…]
 #
 # Hỏi keyID / applicationKey của Master Application Key (gõ vào Terminal, không
-# lưu ở đâu), rồi đặt quy tắc CORS tên "mathpad-web" cho bucket.
+# lưu ở đâu), rồi đặt quy tắc CORS tên "mintmath-web" cho bucket.
 # Biến môi trường (không bắt buộc): B2_KEY_ID, B2_APP_KEY; B2_AUTH_URL (thử nghiệm).
 set -eu
 
@@ -18,7 +18,7 @@ die() {
   exit 1
 }
 
-[ $# -ge 2 ] || die "Thiếu tên bucket hoặc địa chỉ web. Chép lại lệnh đầy đủ từ MathPad."
+[ $# -ge 2 ] || die "Thiếu tên bucket hoặc địa chỉ web. Chép lại lệnh đầy đủ từ MintMath."
 BUCKET=$1
 shift
 case $BUCKET in
@@ -58,7 +58,7 @@ call() {
   fi
 }
 
-printf 'Bật truy cập cho bản web MathPad trên bucket %s\n\n' "$BUCKET"
+printf 'Bật truy cập cho bản web MintMath trên bucket %s\n\n' "$BUCKET"
 KEY_ID=${B2_KEY_ID:-}
 APP_KEY=${B2_APP_KEY:-}
 [ -n "$KEY_ID" ] || KEY_ID=$(ask "keyID của Master Application Key: " 0)
@@ -81,10 +81,10 @@ call "Tìm bucket" "$TMP/token" "$API/b2api/v3/b2_list_buckets" \
 [ "$CODE" = 200 ] || die "Khóa này không xem được bucket (mã $CODE). Dùng Master Application Key."
 BUCKET_ID=$(field "$TMP/out" bucketId)
 [ -n "$BUCKET_ID" ] || die "Không thấy bucket \"$BUCKET\" trong tài khoản này. Kiểm tra tên bucket (phân biệt chữ hoa/thường)."
-OTHERS=$(tr -d '\n' <"$TMP/out" | grep -o '"corsRuleName" *: *"[^"]*"' | grep -vc '"mathpad-web"' || true)
-[ "$OTHERS" = 0 ] || printf 'Lưu ý: bucket có %s quy tắc CORS khác; chúng được thay bằng quy tắc của MathPad.\n' "$OTHERS"
+OTHERS=$(tr -d '\n' <"$TMP/out" | grep -o '"corsRuleName" *: *"[^"]*"' | grep -Evc '"(mintmath|mathpad)-web"' || true)
+[ "$OTHERS" = 0 ] || printf 'Lưu ý: bucket có %s quy tắc CORS khác; chúng được thay bằng quy tắc của MintMath.\n' "$OTHERS"
 
-RULE="{\"corsRuleName\": \"mathpad-web\", \"allowedOrigins\": [$ORIGINS],
+RULE="{\"corsRuleName\": \"mintmath-web\", \"allowedOrigins\": [$ORIGINS],
   \"allowedOperations\": [\"s3_get\", \"s3_head\", \"s3_put\", \"s3_delete\"],
   \"allowedHeaders\": [\"*\"], \"exposeHeaders\": [\"ETag\"], \"maxAgeSeconds\": 3600}"
 call "Cập nhật bucket" "$TMP/token" "$API/b2api/v3/b2_update_bucket" \
@@ -92,4 +92,4 @@ call "Cập nhật bucket" "$TMP/token" "$API/b2api/v3/b2_update_bucket" \
 [ "$CODE" = 200 ] || die "Không đổi được cài đặt bucket (mã $CODE). Dùng Master Application Key."
 
 printf '\n✔ Xong. Bucket %s đã cho phép: %s\n' "$BUCKET" "$(printf '%s' "$ORIGINS" | tr -d '"')"
-printf '  Quay lại MathPad, bấm “Thử kết nối lại” (Backblaze có thể cần khoảng 1 phút).\n'
+printf '  Quay lại MintMath, bấm “Thử kết nối lại” (Backblaze có thể cần khoảng 1 phút).\n'

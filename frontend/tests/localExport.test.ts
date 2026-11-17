@@ -36,7 +36,7 @@ describe("localExport", () => {
 
   it("names files after the title", () => {
     expect(texFileName("Bài 1")).toBe("Bài_1.tex");
-    expect(texFileName("")).toBe("mathpad.tex");
+    expect(texFileName("")).toBe("mintmath.tex");
   });
 });
 

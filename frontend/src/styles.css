@@ -146,8 +146,18 @@ input[type="search"] {
   gap: 6px;
 }
 .brand {
-  color: var(--accent);
-  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.brand-word {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+  font-size: 1.55rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
 }
 .title-input {
   flex: 1 1 200px;
