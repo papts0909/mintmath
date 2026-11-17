@@ -843,6 +843,16 @@ button.cta:hover:not(:disabled) {
   margin: 6px 0 0;
   font-size: 0.9rem;
 }
+.b2-os {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+}
+.b2-os button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .b2-cmd {
   display: flex;
   gap: 6px;

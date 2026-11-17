@@ -198,106 +198,48 @@ async function corsGate(page: Page, state: { allowed: string[] }) {
   });
 }
 
-/** Backblaze's native API (authorize, list buckets, update bucket). */
-async function fakeNativeApi(page: Page, state: { allowed: string[]; rules?: unknown[] }) {
-  const CORS = {
-    "access-control-allow-origin": "*",
-    "access-control-allow-headers": "*",
-    "access-control-allow-methods": "GET, POST",
-  };
-  const json = (r: Parameters<Parameters<Page["route"]>[1]>[0], status: number, body: unknown) =>
-    r.fulfill({
-      status,
-      headers: { ...CORS, "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  await page.route("https://api*.backblazeb2.com/**", async (r) => {
-    const req = r.request();
-    if (req.method() === "OPTIONS") return r.fulfill({ status: 204, headers: CORS });
-    const url = new URL(req.url());
-    if (url.pathname.endsWith("/b2_authorize_account")) {
-      const auth = (await req.allHeaders())["authorization"] ?? "";
-      if (auth !== "Basic " + Buffer.from("masterkey:mastersecret").toString("base64"))
-        return json(r, 401, { code: "unauthorized", message: "bad key" });
-      return json(r, 200, {
-        accountId: "acc",
-        authorizationToken: "tok",
-        apiInfo: { storageApi: { apiUrl: "https://api004.backblazeb2.com" } },
-      });
-    }
-    const body = req.postDataJSON() as { bucketName?: string; corsRules?: { allowedOrigins: string[] }[] };
-    if (url.pathname.endsWith("/b2_list_buckets"))
-      return json(r, 200, {
-        buckets: body.bucketName === FAKE_B2.bucket ? [{ bucketId: "b1", corsRules: [] }] : [],
-      });
-    if (url.pathname.endsWith("/b2_update_bucket")) {
-      state.rules = body.corsRules;
-      state.allowed = body.corsRules!.flatMap((x) => x.allowedOrigins);
-      return json(r, 200, { corsRules: body.corsRules });
-    }
-    return json(r, 404, { code: "not_found" });
-  });
-}
-
-const corsForm = (page: Page) => panel(page).getByRole("form", { name: "Bật truy cập cho bản web" });
-
-test("missing CORS rule: MathPad enables it with the Master key, then connects", async ({ page }) => {
+test("missing CORS rule: the app shows a ready-to-copy command, then connects", async ({ page }) => {
   const bucket: FakeBucket = new Map();
-  const state: { allowed: string[]; rules?: unknown[] } = { allowed: [] };
+  const state = { allowed: [] as string[] };
   await start(page, bucket);
   await corsGate(page, state);
-  await fakeNativeApi(page, state);
   await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
   await connect(page);
   const alert = panel(page).getByRole("alert");
   await expect(alert).toContainText("chưa cho phép trang http://localhost:5173");
-  await expect(alert).not.toContainText(/github|docs\/|scripts\//i);
   const help = panel(page).getByRole("region", { name: "Bật truy cập cho bản web" });
   await expect(help).toBeVisible();
-  await expect(help).not.toContainText(/github|docs\//i);
+  for (const el of [alert, help]) await expect(el).not.toContainText(/github|docs\/|scripts\//i);
 
-  // Wrong key first.
-  await corsForm(page).getByLabel("keyID của Master Application Key").fill("masterkey");
-  await corsForm(page).getByLabel("applicationKey của Master Application Key").fill("wrong");
-  await corsForm(page).getByRole("button", { name: "Bật truy cập và kết nối lại" }).click();
-  await expect(alert).toContainText("Backblaze không nhận khóa này");
-
-  await corsForm(page).getByLabel("applicationKey của Master Application Key").fill("mastersecret");
-  await corsForm(page).getByRole("button", { name: "Bật truy cập và kết nối lại" }).click();
-  await expect(panel(page).getByText(`Đã kết nối bucket ${FAKE_B2.bucket}.`)).toBeVisible();
-  expect(state.rules).toEqual([
-    expect.objectContaining({
-      corsRuleName: "mathpad-web",
-      allowedOrigins: ["http://localhost:5173"],
-      allowedOperations: ["s3_get", "s3_head", "s3_put", "s3_delete"],
-    }),
-  ]);
-  await expect(help).toBeHidden();
-  // The Master key is not kept anywhere on the device.
-  const stored = await page.evaluate(() => JSON.stringify(localStorage));
-  expect(stored).not.toContain("mastersecret");
-  expect(stored).not.toContain("masterkey");
-});
-
-test("when the browser cannot change the bucket, the app shows a ready-to-copy command", async ({ page }) => {
-  await start(page, new Map());
-  await corsGate(page, { allowed: [] });
-  await page.route("https://api*.backblazeb2.com/**", (r) => r.abort("failed"));
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
-  await connect(page);
-  await corsForm(page).getByLabel("keyID của Master Application Key").fill("masterkey");
-  await corsForm(page).getByLabel("applicationKey của Master Application Key").fill("mastersecret");
-  await corsForm(page).getByRole("button", { name: "Bật truy cập và kết nối lại" }).click();
-  await expect(panel(page).getByRole("alert")).toContainText("Dùng cách 2");
-  const help = panel(page).getByRole("region", { name: "Bật truy cập cho bản web" });
-  await expect(help.getByText("curl -fsSLO http://localhost:5173/b2-cors.mjs")).toBeVisible();
+  // The tab matching the visitor's OS is preselected; both commands are ready to copy.
+  await help.getByRole("tab", { name: "macOS / Linux" }).click();
   await expect(
-    help.getByText(`node b2-cors.mjs --bucket ${FAKE_B2.bucket} --origin http://localhost:5173`),
+    help.getByText(
+      `curl -fsSL http://localhost:5173/b2-cors.sh | sh -s -- ${FAKE_B2.bucket} http://localhost:5173`,
+      { exact: true },
+    ),
   ).toBeVisible();
-  // The command downloads the script from the app itself.
-  const res = await page.request.get("/b2-cors.mjs");
-  expect(res.ok()).toBe(true);
-  expect(await res.text()).toContain("export async function setMathpadCors");
+  await help.getByRole("tab", { name: "Windows" }).click();
+  await expect(help.locator("code").filter({ hasText: "b2-cors.ps1" })).toHaveText(
+    "$s=(iwr -UseBasicParsing http://localhost:5173/b2-cors.ps1).RawContentStream.ToArray(); " +
+      "& ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($s))) -Bucket mathpad-test -Origin http://localhost:5173",
+  );
+
+  // The scripts are served by the app itself.
+  for (const [path, marker] of [
+    ["/b2-cors.sh", "b2_update_bucket"],
+    ["/b2-cors.ps1", "b2_update_bucket"],
+  ]) {
+    const res = await page.request.get(path);
+    expect(res.ok()).toBe(true);
+    expect(await res.text()).toContain(marker);
+  }
+
+  // After running the command the rule exists: retry connects.
+  state.allowed = ["http://localhost:5173"];
+  await help.getByRole("button", { name: "Thử kết nối lại" }).click();
+  await expect(panel(page).getByText(`Đã kết nối bucket ${FAKE_B2.bucket}.`)).toBeVisible();
+  await expect(help).toBeHidden();
 });
 
 test("a network that blocks Backblaze is not reported as a CORS problem", async ({ page }) => {

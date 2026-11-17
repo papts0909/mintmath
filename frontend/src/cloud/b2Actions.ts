@@ -18,7 +18,6 @@ import {
   type RemoteObject,
 } from "./b2";
 import { DOC_SUFFIX, docIdFromKey, docKey, planSync, type SyncState } from "./b2Sync";
-import { setMathpadCors } from "../../scripts/b2-cors.mjs";
 
 const CONFIG_KEY = "mathpad.b2.v1";
 const SYNC_KEY = "mathpad.b2.sync.v1";
@@ -96,11 +95,11 @@ function client(cfg: B2Config): B2Client {
 type Msg = { kind: "info" | "error"; text: string } | null;
 
 /** Set when the browser was blocked by a missing CORS rule: the settings to
- *  retry with, and whether enabling it from the app already failed. */
+ *  retry with once the rule is in place. (Backblaze refuses bucket changes
+ *  made from a browser, so the rule is set with a command; see CorsHelp.) */
 export interface CorsNeeded {
   cfg: B2Config;
   origin: string;
-  autoFailed: boolean;
 }
 
 interface B2State {
@@ -163,7 +162,7 @@ export async function explainNetworkError(
 async function messageFor(e: unknown, cfg: B2Config): Promise<string> {
   if (!(e instanceof B2Error && e.kind === "network")) return describeB2Error(e);
   const why = await explainNetworkError(cfg);
-  if (why.kind === "cors") useB2.setState({ cors: { cfg, origin: location.origin, autoFailed: false } });
+  if (why.kind === "cors") useB2.setState({ cors: { cfg, origin: location.origin } });
   return why.text;
 }
 
@@ -210,73 +209,6 @@ export async function connectB2(cfg: B2Config): Promise<boolean> {
   } finally {
     useB2.setState({ busy: null });
   }
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-let corsRetryDelayMs = 3000;
-/** Tests shorten the wait for B2 to apply new CORS rules. */
-export function _setCorsRetryDelay(ms: number): void {
-  corsRetryDelayMs = ms;
-}
-
-/** Add the MathPad CORS rule for this page's address to the bucket, using a
- *  key that may change bucket settings (e.g. the Master Application Key).
- *  The key is used for this call only and never stored. Then connect again. */
-export async function enableCorsFromApp(admin: { keyId: string; appKey: string }): Promise<boolean> {
-  const need = useB2.getState().cors;
-  if (!need) return false;
-  useB2.setState({ busy: "Đang bật truy cập cho bản web…", message: null });
-  try {
-    await setMathpadCors({
-      keyId: admin.keyId.trim(),
-      appKey: admin.appKey.trim(),
-      bucketName: need.cfg.bucket,
-      origins: [need.origin],
-    });
-  } catch (e) {
-    const network = (e as { code?: string }).code === "network";
-    useB2.setState({
-      busy: null,
-      cors: { ...need, autoFailed: need.autoFailed || network },
-      message: {
-        kind: "error",
-        text: network
-          ? "Trình duyệt không cho trang này tự đổi cài đặt bucket (hoặc mạng chặn Backblaze). Dùng cách 2 bên dưới."
-          : describeCorsError(e),
-      },
-    });
-    return false;
-  }
-  // B2 can take a few seconds to apply the new rule.
-  useB2.setState({ busy: "Đã bật. Đang kết nối lại…" });
-  for (let i = 0; i < 4; i++) {
-    await sleep(i === 0 ? 300 : corsRetryDelayMs);
-    try {
-      await client(need.cfg).test();
-      return connectB2(need.cfg);
-    } catch {
-      /* not applied yet */
-    }
-  }
-  useB2.setState({
-    busy: null,
-    message: {
-      kind: "info",
-      text: "Đã bật truy cập cho bản web. Backblaze có thể cần một phút để áp dụng: tải lại trang rồi bấm Kết nối.",
-    },
-  });
-  return false;
-}
-
-function describeCorsError(e: unknown): string {
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.startsWith("Đăng nhập B2"))
-    return "Backblaze không nhận khóa này. Kiểm tra lại keyID và applicationKey của Master Application Key.";
-  if (/không có quyền sửa bucket/.test(msg))
-    return "Khóa này không được phép đổi cài đặt bucket. Dùng Master Application Key (xem hướng dẫn ở trên).";
-  if (/Không tìm thấy bucket/.test(msg))
-    return `${msg} Kiểm tra tên bucket, và khóa phải thuộc đúng tài khoản Backblaze đó.`;
-  return msg;
 }
 
 export function disconnectB2(): void {

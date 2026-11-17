@@ -5,21 +5,24 @@ import { VitePWA } from "vite-plugin-pwa";
 import { readFileSync } from "node:fs";
 import type { Plugin } from "vite";
 
-// Serve the CORS setup script at <app>/b2-cors.mjs so people can download it
-// from the app itself (the app shows the command).
+// Serve the CORS setup scripts at <app>/b2-cors.sh and <app>/b2-cors.ps1: the
+// app shows commands that download them from the app itself.
+const CORS_SCRIPTS = ["b2-cors.sh", "b2-cors.ps1"];
 function serveCorsScript(): Plugin {
-  const src = new URL("./scripts/b2-cors.mjs", import.meta.url);
+  const src = (name: string) => new URL(`./scripts/${name}`, import.meta.url);
   return {
     name: "mathpad-b2-cors-script",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.split("?")[0] !== `${server.config.base}b2-cors.mjs`) return next();
-        res.setHeader("Content-Type", "text/javascript; charset=utf-8");
-        res.end(readFileSync(src));
+        const name = CORS_SCRIPTS.find((n) => req.url?.split("?")[0] === `${server.config.base}${n}`);
+        if (!name) return next();
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.end(readFileSync(src(name)));
       });
     },
     generateBundle() {
-      this.emitFile({ type: "asset", fileName: "b2-cors.mjs", source: readFileSync(src) });
+      for (const name of CORS_SCRIPTS)
+        this.emitFile({ type: "asset", fileName: name, source: readFileSync(src(name)) });
     },
   };
 }
