@@ -5,6 +5,10 @@ const config: CapacitorConfig = {
   appId: "app.mathpad.editor",
   appName: "MathPad",
   webDir: "dist",
+  plugins: {
+    // Route fetch through native HTTP so Backblaze B2 works without CORS.
+    CapacitorHttp: { enabled: true },
+  },
 };
 
 export default config;

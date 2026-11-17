@@ -6,7 +6,7 @@ export function isDesktopApp(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-/** Android or desktop app: no print dialog, no Google sign-in, no service worker. */
+/** Android or desktop app: no print dialog, no service worker. */
 export function isNativeApp(): boolean {
   if (Capacitor.isNativePlatform() || isDesktopApp()) return true;
   // Dev-only switch so the app-specific UI can be exercised in a browser.
@@ -26,7 +26,7 @@ const blobToBase64 = (blob: Blob): Promise<string> =>
   });
 
 /** Android: write the file to the app cache and open the share sheet, from
- *  which the user saves it (Files, Drive) or sends it (Zalo, Gmail…). */
+ *  which the user saves it (Files, a cloud app) or sends it (Zalo, Gmail…). */
 export async function shareFileNative(blob: Blob, filename: string): Promise<void> {
   const [{ Filesystem, Directory }, { Share }] = await Promise.all([
     import("@capacitor/filesystem"),

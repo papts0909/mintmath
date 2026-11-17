@@ -22,7 +22,7 @@ File APK nằm ở `frontend/android/app/build/outputs/apk/release/app-release.a
 
 ## Cài lên điện thoại
 
-1. Chép file `.apk` vào điện thoại (Zalo, Drive, cáp USB…) rồi mở file.
+1. Chép file `.apk` vào điện thoại (Zalo, email, cáp USB…) rồi mở file.
 2. Android hỏi cho phép cài từ nguồn này thì bấm **Cho phép** (Cài đặt → Ứng dụng → Quyền đặc biệt → Cài ứng dụng không rõ nguồn gốc).
 3. Bản mới cài đè lên bản cũ, dữ liệu trong Thư viện được giữ nguyên. Đừng gỡ app trước khi cập nhật: gỡ app sẽ xóa thư viện trên máy. Nên **Sao lưu** thư viện định kỳ.
 
@@ -31,9 +31,9 @@ File APK nằm ở `frontend/android/app/build/outputs/apk/release/app-release.a
 | | Bản web / PWA | App Android |
 | --- | --- | --- |
 | Lưu bài | Thư viện trên máy | Thư viện trên máy |
-| Xuất `.tex`, PNG | Tải về | Mở bảng **Chia sẻ** của Android: lưu vào Tệp/Drive, gửi Zalo, Gmail… |
+| Xuất `.tex`, PNG | Tải về | Mở bảng **Chia sẻ** của Android: lưu vào Tệp, gửi Zalo, Gmail… |
 | Xuất PDF | In → Lưu thành PDF, hoặc PDF LaTeX từ máy chủ | PDF khổ A4 tạo ngay trong app (dạng ảnh, không chọn được chữ) |
-| Google Drive | Đăng nhập trong app | Không có: Google chặn đăng nhập trong WebView. Dùng Sao lưu → Chia sẻ lên Drive |
+| Backblaze B2 | Có (bucket cần CORS) | Có, gọi qua HTTP native, không cần CORS |
 | Bàn phím toán | Có, trên màn cảm ứng | Có |
 
 ## Khóa ký APK

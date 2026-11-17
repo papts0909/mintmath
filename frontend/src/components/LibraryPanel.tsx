@@ -4,6 +4,7 @@ import { useDocStore } from "../core/docStore";
 import { DocFormatError } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
 import { newId } from "../core/id";
+import B2Panel from "./B2Panel";
 import {
   deleteDoc,
   exportBackup,
@@ -14,9 +15,13 @@ import {
   type LibraryEntry,
 } from "../core/library";
 
+export type LibraryTab = "local" | "b2";
+
 interface Props {
   onClose: () => void;
   onMessage: (text: string) => void;
+  tab: LibraryTab;
+  onTab: (tab: LibraryTab) => void;
 }
 
 /** Show another document right away and store the one that was open. */
@@ -43,7 +48,7 @@ const fmt = (iso: string) => {
       });
 };
 
-export default function LibraryPanel({ onClose, onMessage }: Props) {
+export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) {
   const [entries, setEntries] = useState<LibraryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -62,9 +67,10 @@ export default function LibraryPanel({ onClose, onMessage }: Props) {
     }
   }, []);
 
+  // Reload whenever the local tab is shown: a B2 sync may have added documents.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (tab === "local") void refresh();
+  }, [refresh, tab]);
 
   const open = async (id: string) => {
     const doc = await getDoc(id);
@@ -145,81 +151,105 @@ export default function LibraryPanel({ onClose, onMessage }: Props) {
           ✕
         </button>
       </div>
-      <div className="library-actions">
-        <button type="button" onClick={() => void newDoc()}>
-          + Bài mới
+      <div className="tabs" role="tablist" aria-label="Nơi lưu">
+        <button type="button" role="tab" aria-selected={tab === "local"} onClick={() => onTab("local")}>
+          💻 Trên máy
         </button>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          title=".tex, .mathpad.json hoặc bản sao lưu"
-        >
-          Nhập tệp
+        <button type="button" role="tab" aria-selected={tab === "b2"} onClick={() => onTab("b2")}>
+          ☁ Backblaze B2
         </button>
-        <button type="button" onClick={() => void backup()} title="Tải toàn bộ thư viện thành một tệp">
-          Sao lưu
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          accept={ACCEPTED_FILES}
-          hidden
-          data-testid="library-import"
-          onChange={(e) => {
-            if (e.target.files?.length) void onFiles(e.target.files);
-            e.target.value = "";
+      </div>
+      {tab === "b2" ? (
+        <B2Panel
+          onMessage={onMessage}
+          onOpened={() => {
+            void refresh();
           }}
         />
-      </div>
-      <input
-        type="search"
-        placeholder="Tìm theo tiêu đề hoặc nội dung…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        aria-label="Tìm trong thư viện"
-      />
-      {error ? (
-        <p className="status error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {entries === null ? <p className="muted">Đang tải…</p> : null}
-      {entries && !shown.length ? (
-        <p className="muted">
-          {query ? "Không tìm thấy bài nào." : "Chưa có bài nào. Bài đang soạn sẽ tự lưu vào đây."}
-        </p>
-      ) : null}
-      <ul className="library-list">
-        {shown.map((e) => (
-          <li key={e.id} className={e.id === currentId ? "is-current" : ""} data-testid="library-item">
-            <button type="button" className="library-open" onClick={() => void open(e.id)}>
-              <strong>{e.title || "Không tiêu đề"}</strong>
-              {e.preview ? <span className="entry-preview">{e.preview}</span> : null}
-              <span className="meta">
-                {fmt(e.updatedAt)} · {e.lineCount} dòng{e.id === currentId ? " · đang mở" : ""}
-              </span>
+      ) : (
+        <>
+          <div className="library-actions">
+            <button type="button" onClick={() => void newDoc()}>
+              + Bài mới
             </button>
-            <span className="library-item-actions">
-              <button
-                type="button"
-                onClick={() => void duplicate(e)}
-                aria-label={`Nhân bản ${e.title}`}
-                title="Nhân bản"
-              >
-                ⧉
-              </button>
-              <button type="button" onClick={() => void remove(e)} aria-label={`Xóa ${e.title}`} title="Xóa">
-                🗑
-              </button>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="muted small">
-        Bài được lưu trên thiết bị này. Dùng “Sao lưu” hoặc Google Drive để giữ bản ở nơi khác hay chuyển sang
-        máy khác.
-      </p>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              title=".tex, .mathpad.json hoặc bản sao lưu"
+            >
+              Nhập tệp
+            </button>
+            <button type="button" onClick={() => void backup()} title="Tải toàn bộ thư viện thành một tệp">
+              Sao lưu
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              accept={ACCEPTED_FILES}
+              hidden
+              data-testid="library-import"
+              onChange={(e) => {
+                if (e.target.files?.length) void onFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </div>
+          <input
+            type="search"
+            placeholder="Tìm theo tiêu đề hoặc nội dung…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Tìm trong thư viện"
+          />
+          {error ? (
+            <p className="status error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {entries === null ? <p className="muted">Đang tải…</p> : null}
+          {entries && !shown.length ? (
+            <p className="muted">
+              {query ? "Không tìm thấy bài nào." : "Chưa có bài nào. Bài đang soạn sẽ tự lưu vào đây."}
+            </p>
+          ) : null}
+          <ul className="library-list">
+            {shown.map((e) => (
+              <li key={e.id} className={e.id === currentId ? "is-current" : ""} data-testid="library-item">
+                <button type="button" className="library-open" onClick={() => void open(e.id)}>
+                  <strong>{e.title || "Không tiêu đề"}</strong>
+                  {e.preview ? <span className="entry-preview">{e.preview}</span> : null}
+                  <span className="meta">
+                    {fmt(e.updatedAt)} · {e.lineCount} dòng{e.id === currentId ? " · đang mở" : ""}
+                  </span>
+                </button>
+                <span className="library-item-actions">
+                  <button
+                    type="button"
+                    onClick={() => void duplicate(e)}
+                    aria-label={`Nhân bản ${e.title}`}
+                    title="Nhân bản"
+                  >
+                    ⧉
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void remove(e)}
+                    aria-label={`Xóa ${e.title}`}
+                    title="Xóa"
+                  >
+                    🗑
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">
+            Bài được lưu trên thiết bị này. Dùng “Sao lưu” hoặc tab ☁ Backblaze B2 để giữ bản ở nơi khác hay
+            chuyển sang máy khác.
+          </p>
+        </>
+      )}
     </aside>
   );
 }

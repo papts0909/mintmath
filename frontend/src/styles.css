@@ -726,3 +726,115 @@ kbd {
   align-items: center;
   gap: 6px;
 }
+
+/* ---------- Library tabs and Backblaze B2 ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tabs [role="tab"] {
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  padding: 6px 10px;
+  color: var(--muted);
+}
+.tabs [role="tab"][aria-selected="true"] {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+button.primary,
+button.cta {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+button.primary:hover:not(:disabled),
+button.cta:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.link-button {
+  background: none;
+  border: none;
+  padding: 8px 0 0;
+  color: var(--error);
+  text-decoration: underline;
+}
+.b2-cta {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.b2-cta p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+.b2-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.b2-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.b2-form input {
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+.b2-form input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+.b2-secret {
+  display: flex;
+  gap: 6px;
+}
+.b2-help {
+  font-size: 0.85rem;
+}
+.b2-help summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.b2-help ol {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+.b2-help li {
+  margin-bottom: 4px;
+}
+.b2-account {
+  margin: 4px 0 8px;
+  word-break: break-all;
+}
+.b2-panel h3 {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+.cloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.shortcut-panel.library-panel,
+.side-panel.library-panel {
+  flex-basis: 340px;
+}

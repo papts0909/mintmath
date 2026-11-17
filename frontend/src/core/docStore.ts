@@ -25,9 +25,7 @@ export interface DocState {
   focusNonce: number;
   selection: string[];
   error: LineError | null;
-  /** Google Drive file this doc is bound to (Phase 4). */
-  driveFileId: string | null;
-  /** Unsaved changes relative to Drive. */
+  /** Changed since it was loaded (used to confirm before replacing it). */
   dirty: boolean;
   past: Snapshot[];
   future: Snapshot[];
@@ -48,14 +46,12 @@ export interface DocState {
   moveLine: (id: string, toIndex: number) => void;
   setJoinPrev: (id: string, joinPrev: boolean) => void;
   setTitle: (title: string) => void;
-  loadDoc: (doc: Doc, opts?: { driveFileId?: string | null }) => void;
+  loadDoc: (doc: Doc) => void;
   newDoc: () => void;
   focusLine: (id: string | null, edge?: FocusEdge) => void;
   focusRelative: (id: string, delta: number, edge?: FocusEdge) => boolean;
   setSelection: (ids: string[]) => void;
   setError: (error: LineError | null) => void;
-  setDriveFileId: (id: string | null) => void;
-  markDriveSaved: () => void;
   undo: () => boolean;
   redo: () => boolean;
 }
@@ -86,7 +82,6 @@ const initialState = () => ({
   focusNonce: 0,
   selection: [],
   error: null,
-  driveFileId: null,
   dirty: false,
   past: [],
   future: [],
@@ -255,11 +250,10 @@ export const useDocStore = create<DocState>()((set, get) => {
       set({ doc: { ...s.doc, title, updatedAt: new Date().toISOString() }, dirty: true });
     },
 
-    loadDoc: (doc, opts = {}) => {
+    loadDoc: (doc) => {
       set({
         ...initialState(),
         doc: doc.lines.length ? doc : { ...doc, lines: [emptyLine()] },
-        driveFileId: opts.driveFileId ?? null,
         focusNonce: get().focusNonce + 1,
       });
     },
@@ -284,8 +278,6 @@ export const useDocStore = create<DocState>()((set, get) => {
 
     setSelection: (ids) => set({ selection: ids }),
     setError: (error) => set({ error }),
-    setDriveFileId: (driveFileId) => set({ driveFileId }),
-    markDriveSaved: () => set({ dirty: false }),
 
     undo: () => {
       const s = get();

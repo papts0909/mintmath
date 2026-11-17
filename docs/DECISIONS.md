@@ -41,10 +41,7 @@ Môi trường agent **không chạy được Docker** (không có daemon) và *
 
 ## P0-T3 — Drive từ trang tĩnh
 
-**Hoãn** vì cần Client ID và API key thật (việc cần người làm, xem README). Thay vào đó:
-
-- `src/drive/*` viết theo Google Identity Services (`google.accounts.oauth2.initTokenClient`, `requestAccessToken`, `revoke`) và Picker (`gapi.load('picker')`, `google.picker.PickerBuilder`, `DocsView`). Tên API viết theo trí nhớ, **cần đối chiếu khi có credential thật**.
-- E2E `e2e/drive.spec.ts` thay Google bằng bản giả (`e2e/fakeGoogle.ts`: GIS, Picker, Drive v3) và chạy trọn vòng lưu → mở bằng Picker ở trình duyệt khác → sửa → ghi đè → mở lại, kèm các trường hợp 401, 404, từ chối quyền, mất mạng.
+Đã **bỏ** Google Drive. Google chặn đăng nhập OAuth trong WebView nhúng, nên Drive không chạy được trong app máy tính và app Android, và mỗi người dùng lại cần OAuth client. Thay bằng Backblaze B2 (mục bên dưới).
 
 ## Khác với plan
 
@@ -74,3 +71,15 @@ Yêu cầu: chạy trên máy tính, Android, iOS/iPadOS, dùng cá nhân và ch
   - Trên màn hẹp, thanh công cụ cuộn theo trang.
 - **Cài app:** nút "Cài ứng dụng" dùng sự kiện `beforeinstallprompt` (Chrome/Edge/Android). Trên iOS/iPadOS có hướng dẫn "Thêm vào MH chính".
 - **Phát hành:** workflow GitHub Pages chạy thủ công (`.github/workflows/pages.yml`), build với `VITE_BASE=/<repo>/`.
+
+## Lưu trữ đám mây: Backblaze B2 thay cho Google Drive
+
+- Mỗi người dùng **tự tạo tài khoản B2** và nhập keyID, applicationKey, bucket, endpoint trong app. Không có máy chủ MathPad giữ khóa hay dữ liệu.
+- Gọi API tương thích S3 (ListObjectsV2/Get/Put/Delete), ký SigV4 bằng `aws4fetch`. Code ở `frontend/src/cloud/`.
+- Ba nền tảng cùng một code:
+  - Bản web/PWA dùng `fetch` (bucket cần quy tắc CORS).
+  - Desktop dùng `@tauri-apps/plugin-http`, chỉ được phép gọi `https://*.backblazeb2.com`.
+  - Android dùng `CapacitorHttp` (patch `fetch` bằng HTTP native).
+- Tên tệp: `mathpad/<tiêu-đề-không-dấu>__<id>.mathpad.json`. id giữ khóa ổn định giữa các máy; phần tiêu đề để dễ đọc khi duyệt bucket. Đổi tiêu đề thì tệp cũ được thay.
+- Đồng bộ hai chiều dựa trên ETag và `updatedAt` đã ghi nhớ ở lần đồng bộ trước (`planSync`, hàm thuần, có test). Không bao giờ xóa; sửa ở cả hai nơi thì giữ cả hai bản ("… (bản trên B2)").
+- Khóa lưu trong bộ nhớ cục bộ của app/trình duyệt trên từng máy. Nên dùng application key chỉ có quyền trên một bucket. Lưu khóa vào kho bảo mật của hệ điều hành ghi ở BACKLOG.

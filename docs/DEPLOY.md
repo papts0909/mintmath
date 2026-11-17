@@ -6,9 +6,9 @@
 
 **GitHub Pages:** repo public miễn phí, repo private cần gói trả phí.
 1. Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-2. (Tùy chọn) Settings → Secrets and variables → Actions → **Variables**: `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_APP_ID` để bật Drive, và `VITE_API_BASE` nếu có máy chủ xuất PDF.
+2. (Tùy chọn) Settings → Secrets and variables → Actions → **Variables**: `VITE_API_BASE` nếu có máy chủ xuất PDF.
 3. Actions → "Deploy PWA to GitHub Pages" → **Run workflow**. Link sẽ là `https://<tên-tài-khoản>.github.io/<tên-repo>/`.
-4. Nếu dùng Drive: thêm origin `https://<tên-tài-khoản>.github.io` vào OAuth client (mục 1 bên dưới).
+4. Ai dùng Backblaze B2 trên bản web thì thêm địa chỉ `https://<tên-tài-khoản>.github.io` vào quy tắc CORS của bucket của mình (xem [B2.md](B2.md)).
 
 **Cloudflare Pages / Netlify** (miễn phí, chạy được với repo private): build command `cd frontend && npm ci && npm run build`, output `frontend/dist`. Đặt biến `VITE_EXPORT_SERVER=off`, hoặc `VITE_API_BASE=…` nếu có máy chủ.
 
@@ -20,21 +20,10 @@ Phương án đề xuất, **cần người chốt**: frontend tĩnh trên **Clo
 
 | Giá trị | Ví dụ | Dùng ở |
 | --- | --- | --- |
-| Tên miền frontend | `https://mathpad.example.com` | OAuth origin, `MATHPAD_CORS_ORIGINS` |
+| Tên miền frontend | `https://mathpad.example.com` | `MATHPAD_CORS_ORIGINS`, CORS của bucket B2 |
 | URL backend | `https://mathpad-api-xxxx.a.run.app` | `VITE_API_BASE` |
-| OAuth Client ID | `123-abc.apps.googleusercontent.com` | `VITE_GOOGLE_CLIENT_ID` |
-| API key (giới hạn cho Picker API và origin) | `AIza…` | `VITE_GOOGLE_API_KEY` |
-| Số hiệu project Google Cloud | `123456789012` | `VITE_GOOGLE_APP_ID` |
 
-## 1. Google Cloud (OAuth, Drive, Picker)
-
-1. Tạo project trong Google Cloud Console.
-2. Bật **Google Drive API** và **Google Picker API**.
-3. Cấu hình màn hình đồng ý OAuth: loại External, scope `https://www.googleapis.com/auth/drive.file`. Khi còn ở chế độ Testing, thêm tài khoản thử vào danh sách test users.
-4. Tạo **OAuth client ID** loại *Web application*. Authorized JavaScript origins gồm `http://localhost:5173` (dev) và tên miền production.
-5. Tạo **API key** và giới hạn: chỉ Picker API, HTTP referrer là các origin ở trên.
-
-## 2. Backend lên Cloud Run
+## 1. Backend lên Cloud Run
 
 ```bash
 cd backend
@@ -52,18 +41,16 @@ gcloud run deploy mathpad-api \
 
 Fly.io tương tự: `fly launch --dockerfile backend/Dockerfile`, đặt cùng các biến môi trường, chọn VM 1 GB.
 
-## 3. Frontend lên Cloudflare Pages
+## 2. Frontend lên Cloudflare Pages
 
 - Build command: `cd frontend && npm ci && npm run build`
 - Output directory: `frontend/dist`
 - Environment variables (build):
   - `VITE_API_BASE=https://mathpad-api-xxxx.a.run.app`
-  - `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_APP_ID`
 
 Cách khác: đặt frontend và backend sau cùng một tên miền (ví dụ Cloudflare route `/api/*` về Cloud Run), khi đó để trống `VITE_API_BASE` và không cần CORS.
 
-## 4. Sau khi triển khai
+## 3. Sau khi triển khai
 
-1. Thêm origin production vào OAuth client (bước 1.4) nếu chưa có.
-2. Nghiệm thu: gõ bài mẫu, xuất `.tex`/PDF/PNG, lưu lên Drive, mở ở trình duyệt khác bằng Picker.
+1. Nghiệm thu: gõ bài mẫu, xuất `.tex`/PDF/PNG, kết nối B2, lưu bài và mở lại ở trình duyệt khác.
 3. Đo thời gian xuất PDF bài mẫu khi backend đã ấm (yêu cầu dưới 5 giây). Log backend có dòng `compile doc=… took=…s`.

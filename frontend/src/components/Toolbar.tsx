@@ -4,17 +4,9 @@ import { docFileName, DocFormatError, serializeDoc } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
 import { newId } from "../core/id";
 import { getDoc } from "../core/library";
-import { isNativeApp } from "../native";
 import { useDocStore } from "../core/docStore";
 import type { Settings } from "../core/persistence";
-import {
-  driveSignIn,
-  driveSignOut,
-  openFromDrive,
-  saveAsNewAfterMissing,
-  saveToDrive,
-  useDriveUi,
-} from "../drive/driveActions";
+import { saveCurrentToB2, useB2 } from "../cloud/b2Actions";
 import { copyLines } from "./Editor";
 import ExportMenu from "./ExportMenu";
 import InstallBar from "./InstallBar";
@@ -26,18 +18,17 @@ interface Props {
   onSettings: (s: Settings) => void;
   onToggleShortcuts: () => void;
   onToggleLibrary: () => void;
+  onOpenB2: () => void;
   onPreview: (url: string) => void;
   onMessage: (text: string) => void;
 }
-
-const confirmDiscard = () => window.confirm("Tài liệu hiện tại có thay đổi chưa lưu. Bỏ qua và tiếp tục?");
 
 export default function Toolbar(props: Props) {
   const title = useDocStore((s) => s.doc.title);
   const canUndo = useDocStore((s) => s.past.length > 0);
   const canRedo = useDocStore((s) => s.future.length > 0);
   const selection = useDocStore((s) => s.selection);
-  const drive = useDriveUi();
+  const b2 = useB2();
   const fileInput = useRef<HTMLInputElement>(null);
 
   // The open document is kept in the library, so starting a new one loses nothing.
@@ -64,7 +55,7 @@ export default function Toolbar(props: Props) {
     }
   };
 
-  const savedTime = drive.savedAt?.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const savedTime = b2.savedAt?.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <header className="toolbar">
@@ -135,48 +126,39 @@ export default function Toolbar(props: Props) {
         <ExportMenu onPreview={props.onPreview} />
       </div>
       <div className="toolbar-row">
-        <div role="group" aria-label="Google Drive" className="drive">
-          {!drive.configured ? (
-            <span className="muted" title="Đặt VITE_GOOGLE_CLIENT_ID để bật Google Drive">
-              {isNativeApp()
-                ? "Google Drive dùng ở bản web; trong app dùng Thư viện → Sao lưu"
-                : "Google Drive chưa được cấu hình"}
-            </span>
-          ) : drive.signedIn ? (
+        <div role="group" aria-label="Backblaze B2" className="cloud">
+          {b2.config ? (
             <>
-              <span className="account">👤 {drive.account ?? "Google"}</span>
-              <button type="button" disabled={drive.busy} onClick={() => void saveToDrive()} title="Ctrl+S">
-                Lưu lên Drive
+              <button
+                type="button"
+                className="primary"
+                disabled={b2.busy !== null}
+                onClick={() => void saveCurrentToB2()}
+                title="Lưu bài đang mở lên B2 (Ctrl+S)"
+              >
+                ☁ Lưu lên B2
               </button>
-              <button type="button" disabled={drive.busy} onClick={() => void saveToDrive({ copy: true })}>
-                Lưu bản sao
+              <button type="button" onClick={props.onOpenB2} title="Mở, đồng bộ, quản lý tệp trên B2">
+                ☁ {b2.config.bucket}
               </button>
-              <button type="button" disabled={drive.busy} onClick={() => void openFromDrive(confirmDiscard)}>
-                Mở từ Drive
-              </button>
-              <button type="button" onClick={driveSignOut}>
-                Đăng xuất
-              </button>
+              {b2.busy ? <span className="muted">{b2.busy}</span> : null}
+              {!b2.busy && savedTime ? <span className="muted">Đã lưu lên B2 lúc {savedTime}</span> : null}
+              {!b2.busy && b2.message?.kind === "error" ? (
+                <span className="status error" role="alert">
+                  {b2.message.text}
+                </span>
+              ) : null}
             </>
           ) : (
-            <button type="button" disabled={drive.busy} onClick={() => void driveSignIn()}>
-              Đăng nhập Google
+            <button
+              type="button"
+              className="cta"
+              onClick={props.onOpenB2}
+              title="Lưu và mở bài trên tài khoản B2 của bạn"
+            >
+              ☁ Kết nối Backblaze B2
             </button>
           )}
-          {savedTime ? <span className="muted">Đã lưu lên Drive lúc {savedTime}</span> : null}
-          {drive.message ? (
-            <span
-              className={`status ${drive.message.kind}`}
-              role={drive.message.kind === "error" ? "alert" : "status"}
-            >
-              {drive.message.text}
-            </span>
-          ) : null}
-          {drive.offerSaveAsNew ? (
-            <button type="button" onClick={() => void saveAsNewAfterMissing()}>
-              Lưu thành file mới
-            </button>
-          ) : null}
         </div>
         <div className="settings">
           <button type="button" onClick={props.onToggleShortcuts} title="Ctrl+/">

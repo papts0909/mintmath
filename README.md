@@ -1,10 +1,10 @@
 # MathPad (mintmath)
 
-MathPad là ứng dụng web để trình bày bài giải toán theo từng dòng, gõ hoàn toàn bằng bàn phím. Mỗi dòng là một dòng toán (MathLive) hoặc một dòng chữ tiếng Việt có dấu. Bài làm xuất được ra `.tex`, PDF, PNG và lưu trên Google Drive của người dùng.
+MathPad là ứng dụng web để trình bày bài giải toán theo từng dòng, gõ hoàn toàn bằng bàn phím. Mỗi dòng là một dòng toán (MathLive) hoặc một dòng chữ tiếng Việt có dấu. Bài làm xuất được ra `.tex`, PDF, PNG, và lưu được lên tài khoản Backblaze B2 của chính người dùng.
 
 - **Frontend:** React, Vite, TypeScript (strict), Zustand, MathLive. Thư mục `frontend/`.
 - **Backend:** FastAPI, chỉ lo việc xuất file: LaTeX → PDF bằng Tectonic hoặc XeLaTeX, PDF → PNG bằng `pdftoppm`. Thư mục `backend/`.
-- **Dữ liệu:** nằm ở trình duyệt (localStorage) và Google Drive. Backend không có cơ sở dữ liệu và không giữ token.
+- **Dữ liệu:** nằm trên thiết bị (Thư viện, IndexedDB) và, nếu người dùng kết nối, trong bucket Backblaze B2 của họ. Backend không có cơ sở dữ liệu và không giữ khóa.
 
 MathPad là **PWA**: cài được như ứng dụng lên máy tính (Chrome/Edge), Android, iPhone và iPad, và chạy offline. Soạn bài, lưu trên máy, xuất `.tex`, In/Lưu PDF và xuất PNG đều chạy ngay trên thiết bị. Máy chủ xuất file là **tùy chọn**: khi có, nút PDF/PNG cho bản dàn trang LaTeX chuẩn; khi không có hoặc mất mạng, app tự dùng bản xuất tại máy.
 
@@ -50,7 +50,7 @@ cd frontend && npm run lint && npm test
 cd frontend && npx playwright test
 ```
 
-Playwright tự bật backend (cổng 8000) và Vite (cổng 5173). Các test Drive thay Google bằng bản giả, không cần tài khoản thật. Test biên dịch PDF ở backend tự bỏ qua nếu máy không có engine TeX.
+Playwright tự bật backend (cổng 8000) và Vite (cổng 5173). Các test B2 dùng một B2 giả lập (API S3 trong bộ nhớ), không cần tài khoản thật. Test biên dịch PDF ở backend tự bỏ qua nếu máy không có engine TeX.
 
 ## Cài lên thiết bị (dùng cá nhân, chia sẻ bạn bè)
 
@@ -78,7 +78,16 @@ Workflow **Desktop apps** build file `.dmg` (macOS, chip Apple và Intel) và `.
 
 ## App Android (APK)
 
-Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) mỗi khi frontend thay đổi. Cách tải, cài và ký: [docs/ANDROID.md](docs/ANDROID.md). Trong app Android: không có Google Drive; xuất file qua bảng Chia sẻ; PDF tạo ngay trong app.
+Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) mỗi khi frontend thay đổi. Cách tải, cài và ký: [docs/ANDROID.md](docs/ANDROID.md). Trong app Android: xuất file qua bảng Chia sẻ; PDF tạo ngay trong app.
+
+## Lưu trên Backblaze B2
+
+Mỗi người dùng **tài khoản B2 của riêng mình**: bấm **☁ Kết nối Backblaze B2**, rồi nhập keyID, applicationKey, tên bucket và endpoint. Sau đó dùng được:
+- **☁ Lưu lên B2** (Ctrl+S), mở bài từ B2 trên máy khác.
+- **⇅ Đồng bộ thư viện** giữa máy và B2. Không bao giờ xóa; bài sửa ở cả hai nơi được giữ cả hai bản.
+- Tải tệp bất kỳ lên/xuống; **⬆ B2** lưu bản `.tex` và PDF.
+
+Chạy được trên bản web/PWA (cần CORS trên bucket), app máy tính và app Android. Hướng dẫn từng bước: [docs/B2.md](docs/B2.md).
 
 ## Thư viện bài tập và nhập LaTeX
 
@@ -87,7 +96,7 @@ Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) m�
   - File `.tex` do MathPad xuất ra nhập lại đúng nguyên bài.
   - File LaTeX viết tay đọc được: `\section`/`\title` thành tiêu đề, đoạn văn thành dòng chữ, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline` thành dòng toán (mỗi hàng của align là một dòng nối), `itemize`/`enumerate` thành dòng có dấu đầu dòng.
   - Đoạn văn có công thức `$…$` xen giữa thành một dòng toán, phần chữ bọc trong `\text{…}`.
-- Thư viện nằm trên từng thiết bị. Muốn dùng chung giữa máy tính và điện thoại thì dùng Sao lưu rồi Nhập, hoặc Google Drive (bản web).
+- Thư viện nằm trên từng thiết bị. Muốn dùng chung giữa máy tính và điện thoại thì kết nối Backblaze B2 (xem dưới), hoặc dùng Sao lưu rồi Nhập.
 
 ## Biến môi trường
 
@@ -95,9 +104,6 @@ Xem [.env.example](.env.example). Không commit giá trị thật.
 
 | Biến | Nơi dùng | Ý nghĩa |
 | --- | --- | --- |
-| `VITE_GOOGLE_CLIENT_ID` | frontend | OAuth Client ID (Web). Để trống thì tính năng Drive bị ẩn. |
-| `VITE_GOOGLE_API_KEY` | frontend | API key cho Google Picker |
-| `VITE_GOOGLE_APP_ID` | frontend | Số hiệu project Google Cloud (Picker) |
 | `VITE_API_BASE` | frontend | URL backend khi khác origin (production) |
 | `VITE_EXPORT_SERVER` | frontend | `off` = không dùng máy chủ xuất file, mọi định dạng xuất tại máy |
 | `VITE_BASE` | frontend (build) | Đường dẫn con khi đặt app dưới thư mục, ví dụ `/mintmath/` trên GitHub Pages |
@@ -124,7 +130,7 @@ Xem [.env.example](.env.example). Không commit giá trị thật.
 | `;` trong ma trận, hệ | Sang hàng kế, hoặc thêm hàng |
 | Tab trong ma trận | Sang ô kế |
 | `/` `^` `_` | Phân số, mũ, chỉ số dưới. `d1` thành `d₁` (tắt được) |
-| Ctrl+S | Lưu lên Google Drive |
+| Ctrl+S | Lưu lên Backblaze B2 (khi đã kết nối; chưa kết nối thì mở form kết nối) |
 | Ctrl+/ | Bật/tắt bảng lệnh tắt |
 | Bấm số dòng, Shift+bấm | Chọn một hoặc nhiều dòng để sao chép hoặc xóa; kéo số dòng để đổi thứ tự |
 
@@ -148,19 +154,18 @@ Danh sách đầy đủ nằm ở `frontend/src/core/shortcuts.ts`, cũng hiện
 
 ## Định dạng tài liệu
 
-Tài liệu là một đối tượng JSON `{version: 1, id, title, lines: [{id, type: "math"|"text", content, joinPrev?}], updatedAt}`. Cùng một cấu trúc dùng cho localStorage, file `.mathpad.json` trên máy hoặc trên Drive, và thân request xuất file. Kiểu dữ liệu khai báo ở `frontend/src/core/types.ts` và khớp với `backend/app/models.py`.
+Tài liệu là một đối tượng JSON `{version: 1, id, title, lines: [{id, type: "math"|"text", content, joinPrev?}], updatedAt}`. Cùng một cấu trúc dùng cho localStorage, file `.mathpad.json` trên máy hoặc trên B2, và thân request xuất file. Kiểu dữ liệu khai báo ở `frontend/src/core/types.ts` và khớp với `backend/app/models.py`.
 
 API backend: `GET /api/health`, `POST /api/export/tex`, `POST /api/export/pdf`, `POST /api/export/png?dpi=200` (zip nếu nhiều trang). Giới hạn: thân request 1 MB, 2.000 dòng, biên dịch 20 giây, DPI từ 72 đến 600. Nội dung dòng toán chứa các lệnh đọc ghi file hoặc định nghĩa macro (`\input`, `\write`, `\def`, `\catcode`, `\csname`…) bị từ chối với lỗi 400 kèm `lineId`.
 
 ## Giới hạn đã biết
 
 - Tectonic chưa chạy thử được trong môi trường phát triển của agent (không có Docker). Đã kiểm chứng bằng XeLaTeX; image Docker được build và chạy thử trong job CI `docker`. Xem DECISIONS.md.
-- Google Drive mới được test với Google giả lập. Cần Client ID thật để nghiệm thu với Google.
+- Backblaze B2 mới được test với B2 giả lập. Cần thử với tài khoản B2 thật.
 - PDF xuất tại máy là bản in của trình duyệt, không phải dàn trang LaTeX. Muốn bản LaTeX chuẩn thì cần máy chủ xuất file, hoặc tải `.tex` về rồi biên dịch.
-- "Lưu PDF lên Drive" cần máy chủ xuất file.
-- Khi ứng dụng OAuth còn ở chế độ Testing, chỉ tài khoản trong danh sách test users đăng nhập được. Scope `drive.file` chỉ thấy file do MathPad tạo hoặc file chọn qua Picker.
+- Bản web/PWA cần bật CORS trên bucket B2 (xem [docs/B2.md](docs/B2.md)); app desktop và Android thì không cần.
 
 ## Việc cần người làm
 
-1. **Google Cloud** (Phase 4): tạo project, bật Drive API và Picker API, màn hình đồng ý OAuth với scope `drive.file`, OAuth Client ID (Web) và API key. Đưa vào `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_APP_ID`.
+1. **Backblaze B2** (tùy chọn, mỗi người tự làm): tạo tài khoản, bucket private và application key giới hạn trong bucket đó, rồi bấm **☁ Kết nối Backblaze B2** trong app. Hướng dẫn: [docs/B2.md](docs/B2.md).
 2. **Đưa bản web lên mạng**: bật GitHub Pages (Settings → Pages → Source: GitHub Actions), rồi chạy workflow "Deploy PWA to GitHub Pages". Repo private thì GitHub Pages cần gói trả phí; khi đó dùng Cloudflare Pages hoặc Netlify (miễn phí). Máy chủ xuất PDF là tùy chọn.

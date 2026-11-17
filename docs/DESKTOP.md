@@ -49,7 +49,7 @@ App **chưa ký số** (ký số cần Apple Developer 99 USD/năm và chứng c
 | Thư viện bài tập | Có | Có (lưu riêng trong app) |
 | Xuất file | Tải về thư mục Downloads | Hộp thoại **Lưu thành…** của hệ điều hành |
 | PDF | In → Lưu thành PDF, hoặc PDF LaTeX từ máy chủ | PDF A4 tạo ngay trong app |
-| Google Drive | Có | Chưa có (đăng nhập Google không chạy trong cửa sổ app). Dùng Thư viện → Sao lưu |
+| Backblaze B2 | Có (bucket cần CORS) | Có, gọi qua HTTP native, không cần CORS |
 
 ## Nâng cấp sau (nếu cần)
 

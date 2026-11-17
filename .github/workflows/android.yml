@@ -38,7 +38,7 @@ jobs:
         run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME"
 
       - run: npm ci
-      - name: Build the web app for Android (no export server, no Google sign-in)
+      - name: Build the web app for Android (no export server)
         run: npx vite build
         env:
           VITE_EXPORT_SERVER: "off"
