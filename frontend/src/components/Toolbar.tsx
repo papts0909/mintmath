@@ -236,6 +236,8 @@ export default function Toolbar(props: Props) {
                   <option value="system">Theo hệ thống</option>
                   <option value="light">Sáng</option>
                   <option value="dark">Tối</option>
+                  <option value="eink">Giấy (e-ink)</option>
+                  <option value="eink-dark">Giấy tối (e-ink)</option>
                 </select>
               </label>
             </div>

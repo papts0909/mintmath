@@ -62,7 +62,7 @@ export interface Settings {
   autoSubscript: boolean;
   /** Handle IME (e.g. Vietnamese Telex) composition in math lines ourselves. */
   imeFix: boolean;
-  theme: "system" | "light" | "dark";
+  theme: "system" | "light" | "dark" | "eink" | "eink-dark";
 }
 
 export const SETTINGS_KEY = "mathpad.settings.v1";
@@ -78,7 +78,8 @@ export function loadSettings(storage: Storage = localStorage): Settings {
         typeof data.autoSubscript === "boolean" ? data.autoSubscript : DEFAULT_SETTINGS.autoSubscript,
       imeFix: typeof data.imeFix === "boolean" ? data.imeFix : DEFAULT_SETTINGS.imeFix,
       theme:
-        data.theme === "light" || data.theme === "dark" || data.theme === "system"
+        typeof data.theme === "string" &&
+        ["system", "light", "dark", "eink", "eink-dark"].includes(data.theme)
           ? data.theme
           : DEFAULT_SETTINGS.theme,
     };
