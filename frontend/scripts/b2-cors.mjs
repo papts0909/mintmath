@@ -4,6 +4,7 @@
 //
 //   node scripts/b2-cors.mjs
 //   node scripts/b2-cors.mjs --bucket my-bucket --origin https://example.com
+//   B2_KEY_ID=… B2_APP_KEY=… B2_BUCKET=… B2_ORIGINS="https://a https://b" node scripts/b2-cors.mjs
 //
 // It asks for a keyID / applicationKey that may edit bucket settings (the
 // Master Application Key, or a key with the listBuckets + writeBuckets
@@ -129,15 +130,26 @@ export function parseArgs(args) {
 
 async function main() {
   const given = parseArgs(argv.slice(2));
-  // Interactive in a terminal; when input is piped, read all lines up front.
-  const piped = stdin.isTTY
-    ? null
-    : await new Promise((r) => {
-        let buf = "";
-        stdin.setEncoding("utf8");
-        stdin.on("data", (c) => (buf += c));
-        stdin.on("end", () => r(buf.split(/\r?\n/)));
-      });
+  // Keys may come from the environment (e.g. GitHub Actions secrets) so they
+  // never appear on a command line.
+  given.keyId ??= process.env.B2_KEY_ID || undefined;
+  given.appKey ??= process.env.B2_APP_KEY || undefined;
+  given.bucketName ??= process.env.B2_BUCKET || undefined;
+  if (!given.origins.length && process.env.B2_ORIGINS)
+    given.origins.push(...parseOrigins(process.env.B2_ORIGINS));
+  const complete = Boolean(given.keyId && given.appKey && given.bucketName);
+  // Interactive in a terminal; when input is piped, read all lines up front;
+  // with everything given (flags/env), ask nothing.
+  const piped = complete
+    ? []
+    : stdin.isTTY
+      ? null
+      : await new Promise((r) => {
+          let buf = "";
+          stdin.setEncoding("utf8");
+          stdin.on("data", (c) => (buf += c));
+          stdin.on("end", () => r(buf.split(/\r?\n/)));
+        });
   const rl = piped ? null : createInterface({ input: stdin, output: stdout });
   const ask = async (q) => {
     if (piped) {
@@ -153,11 +165,12 @@ async function main() {
     ).trim();
     const appKey = (given.appKey ?? (await ask("applicationKey: "))).trim();
     const bucketName = (given.bucketName ?? (await ask("Tên bucket: "))).trim();
-    const extra = given.origins.length
-      ? given.origins.join(" ")
-      : await ask(
-          `Địa chỉ web của MathPad (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
-        );
+    const extra =
+      given.origins.length || complete
+        ? given.origins.join(" ")
+        : await ask(
+            `Địa chỉ web của MathPad (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
+          );
     if (!keyId || !appKey || !bucketName) throw new Error("Cần keyID, applicationKey và tên bucket.");
     const origins = [...new Set([...parseOrigins(extra), ...DEFAULT_ORIGINS])];
     const rules = await setMathpadCors({ keyId, appKey, bucketName, origins });

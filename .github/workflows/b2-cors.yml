@@ -1,0 +1,50 @@
+# Set the CORS rule a Backblaze B2 bucket needs for the MathPad web app / PWA.
+# Runs only when started by hand: Actions → "Set B2 CORS" → Run workflow.
+#
+# One-time setup (Settings → Secrets and variables → Actions → New repository secret):
+#   B2_KEY_ID   keyID of the Master Application Key (or a key with listBuckets + writeBuckets)
+#   B2_APP_KEY  its applicationKey
+# Secrets are never printed in the logs. The bucket name and web addresses are
+# entered when you run the workflow.
+name: Set B2 CORS
+
+on:
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: "Tên bucket B2"
+        required: true
+        type: string
+      origins:
+        description: "Địa chỉ web của MathPad (cách nhau bằng dấu cách)"
+        required: true
+        default: "https://monglinhnguyendat.id.vn https://papts0909.github.io"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  cors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check the secrets are set
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_APP_KEY }}
+        run: |
+          if [ -z "$B2_KEY_ID" ] || [ -z "$B2_APP_KEY" ]; then
+            echo "::error::Thiếu secret B2_KEY_ID hoặc B2_APP_KEY (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+      - name: Set the CORS rule
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_APP_KEY }}
+          B2_BUCKET: ${{ inputs.bucket }}
+          B2_ORIGINS: ${{ inputs.origins }}
+        run: node frontend/scripts/b2-cors.mjs
