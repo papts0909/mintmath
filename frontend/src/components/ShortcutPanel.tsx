@@ -21,6 +21,7 @@ const KEYS: [string, string][] = [
   ["/  ^  _", "Phân số, mũ, chỉ số dưới"],
   ["Ctrl+S", "Lưu lên Backblaze B2 (khi đã kết nối)"],
   ["Ctrl+/", "Bật/tắt bảng này"],
+  ["Ctrl+.", "Bật/tắt chế độ Zen (chỉ còn phần làm toán)"],
 ];
 
 export default function ShortcutPanel({ onClose }: Props) {
