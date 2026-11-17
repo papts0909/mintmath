@@ -56,6 +56,10 @@ export function normalizePrefix(prefix: string): string {
 export function validateConfig(cfg: B2Config): string | null {
   if (!cfg.keyId.trim()) return "Thiếu keyID.";
   if (!cfg.appKey.trim()) return "Thiếu applicationKey.";
+  // A Master Application Key's keyID is the 12-hex-digit account ID. It can
+  // change and delete everything in the account, so it is never stored here.
+  if (/^[0-9a-f]{12}$/i.test(cfg.keyId.trim()))
+    return "Đây là Master Application Key — không dùng để kết nối. Tạo khóa riêng (Application Keys → Add a New Application Key, chỉ cho bucket này, quyền Read and Write).";
   if (!/^[a-z0-9][a-z0-9-]{4,48}[a-z0-9]$/i.test(cfg.bucket.trim())) return "Tên bucket không hợp lệ.";
   if (!parseEndpoint(cfg.endpoint))
     return "Endpoint phải có dạng s3.<vùng>.backblazeb2.com (xem trang chi tiết bucket).";

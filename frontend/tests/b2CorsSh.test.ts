@@ -117,6 +117,8 @@ describe.each(shells)("b2-cors.sh with %s", (shell) => {
     expect(r.status).toBe(1);
     expect(r.out).toContain('Không thấy bucket "Other"');
 
+    r = await run(shell, ["DatNgo", "https://a.example"], { ...keys, B2_APP_KEY: 'x"\nheader = "X: 1' });
+    expect(r.out).toContain("ký tự lạ");
     r = await run(shell, ["DatNgo"], keys);
     expect(r.out).toContain("Thiếu tên bucket");
     r = await run(shell, ["DatNgo", "javascript:alert(1)"], keys);

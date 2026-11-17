@@ -220,3 +220,17 @@ describe("planSync", () => {
     ]);
   });
 });
+
+describe("validateConfig refuses a Master Application Key", () => {
+  it("rejects a 12-hex-digit keyID (the account ID) and accepts an application keyID", async () => {
+    const { validateConfig } = await import("../src/cloud/b2");
+    const base = {
+      appKey: "K004abc",
+      bucket: "my-bucket",
+      endpoint: "s3.us-west-004.backblazeb2.com",
+      prefix: "mathpad/",
+    };
+    expect(validateConfig({ ...base, keyId: "0a1b2c3d4e5f" })).toMatch(/Master Application Key/);
+    expect(validateConfig({ ...base, keyId: "004a1b2c3d4e5f0000000001" })).toBeNull();
+  });
+});
