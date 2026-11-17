@@ -1,19 +1,18 @@
-#!/usr/bin/env node
 // Set the CORS rule a Backblaze B2 bucket needs for the MathPad web app / PWA.
 // Needs only Node 18+ (built-in fetch). No B2 CLI, no other install.
+// The web app also serves this file (…/b2-cors.mjs) and imports its core
+// (setMathpadCors) to enable CORS from the browser, so the top of the module
+// must stay free of Node-only imports.
 //
-//   node scripts/b2-cors.mjs
-//   node scripts/b2-cors.mjs --bucket my-bucket --origin https://example.com
+//   node b2-cors.mjs
+//   node b2-cors.mjs --bucket my-bucket --origin https://example.com
+//   B2_KEY_ID=… B2_APP_KEY=… B2_BUCKET=… B2_ORIGINS="https://a https://b" node b2-cors.mjs
 //
 // It asks for a keyID / applicationKey that may edit bucket settings (the
 // Master Application Key, or a key with the listBuckets + writeBuckets
 // capabilities), the bucket name and the web addresses MathPad runs on.
 // Existing CORS rules of the bucket are kept; only the rule named
 // "mathpad-web" is added or replaced.
-import { createInterface } from "node:readline/promises";
-import { argv, stdin, stdout } from "node:process";
-import { pathToFileURL } from "node:url";
-
 export const RULE_NAME = "mathpad-web";
 
 export const DEFAULT_ORIGINS = [
@@ -50,9 +49,14 @@ export function parseOrigins(text) {
   return out;
 }
 
-/** Keep other rules, add/replace ours. */
+/** Keep other rules; add ours, keeping origins it already allowed. */
 export function mergeRules(existing, rule) {
-  return [...(existing ?? []).filter((r) => r.corsRuleName !== rule.corsRuleName), rule];
+  const prev = (existing ?? []).find((r) => r.corsRuleName === rule.corsRuleName);
+  const origins = [...new Set([...(prev?.allowedOrigins ?? []), ...rule.allowedOrigins])];
+  return [
+    ...(existing ?? []).filter((r) => r.corsRuleName !== rule.corsRuleName),
+    { ...rule, allowedOrigins: origins },
+  ];
 }
 
 async function b2(fetchImpl, url, init, what) {
@@ -60,7 +64,12 @@ async function b2(fetchImpl, url, init, what) {
   try {
     res = await fetchImpl(url, init);
   } catch {
-    throw new Error(`${what}: không kết nối được tới ${new URL(url).host} (kiểm tra mạng / tường lửa).`);
+    // code "network": the request never got an answer (offline, firewall, or a
+    // browser that is not allowed to call this host).
+    throw Object.assign(
+      new Error(`${what}: không kết nối được tới ${new URL(url).host} (kiểm tra mạng / tường lửa).`),
+      { code: "network" },
+    );
   }
   const text = await res.text();
   let data;
@@ -86,7 +95,8 @@ export async function setMathpadCors({ keyId, appKey, bucketName, origins }, fet
   const auth = await b2(
     fetchImpl,
     "https://api.backblazeb2.com/b2api/v3/b2_authorize_account",
-    { headers: { Authorization: "Basic " + Buffer.from(`${keyId}:${appKey}`).toString("base64") } },
+    // btoa exists in browsers and in Node 16+; B2 keys are ASCII.
+    { headers: { Authorization: "Basic " + btoa(`${keyId}:${appKey}`) } },
     "Đăng nhập B2",
   );
   const apiUrl = auth.apiInfo?.storageApi?.apiUrl ?? auth.apiUrl;
@@ -128,16 +138,29 @@ export function parseArgs(args) {
 }
 
 async function main() {
+  const { argv, stdin, stdout } = process;
+  const { createInterface } = await import(/* @vite-ignore */ "node:readline/promises");
   const given = parseArgs(argv.slice(2));
-  // Interactive in a terminal; when input is piped, read all lines up front.
-  const piped = stdin.isTTY
-    ? null
-    : await new Promise((r) => {
-        let buf = "";
-        stdin.setEncoding("utf8");
-        stdin.on("data", (c) => (buf += c));
-        stdin.on("end", () => r(buf.split(/\r?\n/)));
-      });
+  // Keys may come from the environment (e.g. GitHub Actions secrets) so they
+  // never appear on a command line.
+  given.keyId ??= process.env.B2_KEY_ID || undefined;
+  given.appKey ??= process.env.B2_APP_KEY || undefined;
+  given.bucketName ??= process.env.B2_BUCKET || undefined;
+  if (!given.origins.length && process.env.B2_ORIGINS)
+    given.origins.push(...parseOrigins(process.env.B2_ORIGINS));
+  const complete = Boolean(given.keyId && given.appKey && given.bucketName);
+  // Interactive in a terminal; when input is piped, read all lines up front;
+  // with everything given (flags/env), ask nothing.
+  const piped = complete
+    ? []
+    : stdin.isTTY
+      ? null
+      : await new Promise((r) => {
+          let buf = "";
+          stdin.setEncoding("utf8");
+          stdin.on("data", (c) => (buf += c));
+          stdin.on("end", () => r(buf.split(/\r?\n/)));
+        });
   const rl = piped ? null : createInterface({ input: stdin, output: stdout });
   const ask = async (q) => {
     if (piped) {
@@ -153,11 +176,12 @@ async function main() {
     ).trim();
     const appKey = (given.appKey ?? (await ask("applicationKey: "))).trim();
     const bucketName = (given.bucketName ?? (await ask("Tên bucket: "))).trim();
-    const extra = given.origins.length
-      ? given.origins.join(" ")
-      : await ask(
-          `Địa chỉ web của MathPad (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
-        );
+    const extra =
+      given.origins.length || complete
+        ? given.origins.join(" ")
+        : await ask(
+            `Địa chỉ web của MathPad (cách nhau bằng dấu cách; Enter để chỉ dùng mặc định)\n  luôn thêm: ${DEFAULT_ORIGINS.join(" ")}\n> `,
+          );
     if (!keyId || !appKey || !bucketName) throw new Error("Cần keyID, applicationKey và tên bucket.");
     const origins = [...new Set([...parseOrigins(extra), ...DEFAULT_ORIGINS])];
     const rules = await setMathpadCors({ keyId, appKey, bucketName, origins });
@@ -173,4 +197,10 @@ async function main() {
   }
 }
 
-if (argv[1] && import.meta.url === pathToFileURL(argv[1]).href) void main();
+// Run as a command (not when imported, e.g. by the web app).
+if (typeof process !== "undefined" && process.versions?.node && process.argv?.[1]) {
+  const nodeUrl = "node:url";
+  void import(/* @vite-ignore */ nodeUrl).then(({ pathToFileURL }) => {
+    if (import.meta.url === pathToFileURL(process.argv[1]).href) void main();
+  });
+}

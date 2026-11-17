@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-// @ts-expect-error plain ESM script without type declarations
 import { mathpadRule, mergeRules, parseOrigins, setMathpadCors, RULE_NAME } from "../scripts/b2-cors.mjs";
 
 const json = (data: unknown, status = 200) =>
@@ -15,11 +14,14 @@ describe("scripts/b2-cors.mjs", () => {
     expect(parseOrigins("")).toEqual([]);
   });
 
-  it("keeps other rules and replaces its own", () => {
+  it("keeps other rules and the origins its own rule already allowed", () => {
     const other = { corsRuleName: "other", allowedOrigins: ["*"] };
-    const old = { corsRuleName: RULE_NAME, allowedOrigins: ["https://old"] };
+    const old = { corsRuleName: RULE_NAME, allowedOrigins: ["https://old", "https://new"] };
     const rule = mathpadRule(["https://new"]);
-    expect(mergeRules([other, old], rule)).toEqual([other, rule]);
+    expect(mergeRules([other, old], rule)).toEqual([
+      other,
+      { ...rule, allowedOrigins: ["https://old", "https://new"] },
+    ]);
     expect(rule.allowedOperations).toEqual(["s3_get", "s3_head", "s3_put", "s3_delete"]);
     expect(rule.allowedHeaders).toEqual(["*"]);
     expect(rule.exposeHeaders).toEqual(["ETag"]);
@@ -85,7 +87,6 @@ describe("scripts/b2-cors.mjs", () => {
 
 describe("parseArgs", () => {
   it("reads flags in both forms", async () => {
-    // @ts-expect-error plain ESM script
     const { parseArgs } = await import("../scripts/b2-cors.mjs");
     expect(
       parseArgs([
