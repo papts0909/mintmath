@@ -88,6 +88,10 @@ export default function MathLine(props: Props) {
     mf.inlineShortcutTimeout = 0;
     mf.smartFence = true;
     mf.menuItems = [];
+    // Hint in an empty math line; hidden while the line is being edited
+    // (MathLive would show it selected, which looks like typed text).
+    const HINT = "\\text{Gõ toán…}";
+    mf.placeholder = HINT;
     mf.setValue(toDisplay(propsRef.current.line.content), { silenceNotifications: true });
 
     // Inline shortcuts may rewrite the formula after the input event fired, so
@@ -104,14 +108,22 @@ export default function MathLine(props: Props) {
       const dir = (e as CustomEvent<{ direction: MoveDirection }>).detail.direction;
       propsRef.current.onMoveOut(dir);
     };
-    const onFocusIn = () => propsRef.current.onFocus();
+    const onFocusIn = () => {
+      mf.placeholder = "";
+      propsRef.current.onFocus();
+    };
+    const onFocusOut = () => {
+      mf.placeholder = HINT;
+    };
     mf.addEventListener("input", onInput);
     mf.addEventListener("move-out", onMoveOut);
     mf.addEventListener("focusin", onFocusIn);
     mf.addEventListener("focusout", sync);
+    mf.addEventListener("focusout", onFocusOut);
     return () => {
       cancelAnimationFrame(frame);
       mf.removeEventListener("focusout", sync);
+      mf.removeEventListener("focusout", onFocusOut);
       mf.removeEventListener("input", onInput);
       mf.removeEventListener("move-out", onMoveOut);
       mf.removeEventListener("focusin", onFocusIn);

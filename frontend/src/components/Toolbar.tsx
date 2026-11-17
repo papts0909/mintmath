@@ -178,39 +178,44 @@ export default function Toolbar(props: Props) {
             </button>
           ) : null}
         </div>
-        <div role="group" aria-label="Cài đặt" className="settings">
-          <label>
-            <input
-              type="checkbox"
-              checked={props.settings.autoSubscript}
-              onChange={(e) => props.onSettings({ ...props.settings, autoSubscript: e.target.checked })}
-            />
-            d1 → d₁
-          </label>
-          <label title="Sửa lỗi gõ toán khi đang bật bộ gõ tiếng Việt (Telex/VNI) trên macOS. Tắt nếu gõ bị lỗi.">
-            <input
-              type="checkbox"
-              checked={props.settings.imeFix}
-              onChange={(e) => props.onSettings({ ...props.settings, imeFix: e.target.checked })}
-            />
-            Sửa bộ gõ TV
-          </label>
-          <label>
-            Giao diện{" "}
-            <select
-              value={props.settings.theme}
-              onChange={(e) =>
-                props.onSettings({ ...props.settings, theme: e.target.value as Settings["theme"] })
-              }
-            >
-              <option value="system">Theo hệ thống</option>
-              <option value="light">Sáng</option>
-              <option value="dark">Tối</option>
-            </select>
-          </label>
+        <div className="settings">
           <button type="button" onClick={props.onToggleShortcuts} title="Ctrl+/">
-            Lệnh tắt
+            ⌨ Lệnh tắt
           </button>
+          <details className="settings-menu">
+            <summary>⚙ Cài đặt</summary>
+            <div role="group" aria-label="Cài đặt" className="settings-panel">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={props.settings.autoSubscript}
+                  onChange={(e) => props.onSettings({ ...props.settings, autoSubscript: e.target.checked })}
+                />
+                Tự đổi d1 → d₁ (chữ cái + số thành chỉ số dưới)
+              </label>
+              <label title="Tắt nếu gõ toán bị lỗi khi đang bật bộ gõ tiếng Việt">
+                <input
+                  type="checkbox"
+                  checked={props.settings.imeFix}
+                  onChange={(e) => props.onSettings({ ...props.settings, imeFix: e.target.checked })}
+                />
+                Sửa bộ gõ TV (Telex/VNI trên macOS) trong dòng toán
+              </label>
+              <label>
+                Giao diện{" "}
+                <select
+                  value={props.settings.theme}
+                  onChange={(e) =>
+                    props.onSettings({ ...props.settings, theme: e.target.value as Settings["theme"] })
+                  }
+                >
+                  <option value="system">Theo hệ thống</option>
+                  <option value="light">Sáng</option>
+                  <option value="dark">Tối</option>
+                </select>
+              </label>
+            </div>
+          </details>
         </div>
       </div>
       {selection.length ? (

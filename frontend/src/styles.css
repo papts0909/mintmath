@@ -10,6 +10,11 @@
   --error-soft: #fdecec;
   --selected: #fff5d6;
   --ok: #2e7d32;
+  --line-focus: #f0f6ff;
+  --math-select: #9cc4ff;
+  --math-select-text: #06224d;
+  --math-group: #dcebff;
+  --placeholder: #1e6fd9;
   color-scheme: light;
 }
 
@@ -26,6 +31,11 @@
     --error-soft: #3a1f22;
     --selected: #3a3420;
     --ok: #7bd389;
+    --line-focus: #1b2230;
+    --math-select: #3d7be0;
+    --math-select-text: #ffffff;
+    --math-group: #26364f;
+    --placeholder: #8fbcff;
     color-scheme: dark;
   }
 }
@@ -42,6 +52,11 @@
   --error-soft: #3a1f22;
   --selected: #3a3420;
   --ok: #7bd389;
+  --line-focus: #1b2230;
+  --math-select: #3d7be0;
+  --math-select-text: #ffffff;
+  --math-group: #26364f;
+  --placeholder: #8fbcff;
   color-scheme: dark;
 }
 
@@ -200,8 +215,17 @@ input[type="search"] {
   border-radius: 6px;
   border: 1px solid transparent;
 }
+.line:hover {
+  background: var(--surface);
+}
 .line.is-focused {
-  background: var(--accent-soft);
+  background: var(--line-focus);
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+.line.is-focused .gutter {
+  color: var(--accent);
+  font-weight: 700;
 }
 .line.is-selected {
   background: var(--selected);
@@ -248,13 +272,20 @@ input[type="search"] {
 .math-line math-field {
   display: block;
   width: 100%;
-  font-size: 1.3rem;
-  padding: 4px 6px;
+  font-size: 1.55rem;
+  padding: 8px 6px;
   border: none;
   background: transparent;
   color: var(--text);
+  cursor: text;
   --caret-color: var(--accent);
-  --selection-background-color: var(--accent-soft);
+  --_caret-width: 3px;
+  /* The selected cell/placeholder must stand out from the focused line. */
+  --selection-background-color: var(--math-select);
+  --selection-color: var(--math-select-text);
+  --contains-highlight-background-color: var(--math-group);
+  --placeholder-color: var(--placeholder);
+  --placeholder-opacity: 1;
   --primary: var(--accent);
 }
 .math-line math-field::part(menu-toggle) {
@@ -279,8 +310,8 @@ input[type="search"] {
   color: inherit;
   border: none;
   background: transparent;
-  padding: 8px 6px;
-  font-size: 1.05rem;
+  padding: 10px 6px;
+  font-size: 1.15rem;
 }
 .text-line:focus {
   outline: none;
@@ -408,7 +439,7 @@ kbd {
     flex-basis: 30px;
   }
   .math-line math-field {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
   }
   .preview {
     inset: 0;
@@ -594,15 +625,104 @@ kbd {
 /* Text an input method is composing, shown instead of MathLive's highlight. */
 .ime-preview {
   position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 6px;
+  top: 100%;
+  z-index: 4;
+  margin-top: 2px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 6px;
+  padding: 3px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.ime-preview::before {
+  content: "Đang gõ: ";
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.settings-menu {
+  position: relative;
+}
+.settings-menu > summary {
+  list-style: none;
+  cursor: pointer;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1px 6px;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+.settings-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.settings-menu[open] > summary {
+  border-color: var(--accent);
+}
+.settings-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.status-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 5px 16px;
+  font-size: 0.82rem;
   color: var(--muted);
-  pointer-events: none;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.status-type {
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 8px;
+  color: var(--bg);
+}
+.status-type.math {
+  background: var(--accent);
+}
+.status-type.text {
+  background: var(--muted);
+}
+.status-keys {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (pointer: coarse) {
+  .status-keys {
+    display: none;
+  }
+}
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
