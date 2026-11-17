@@ -15,7 +15,7 @@ const CORS_SCRIPTS = ["b2-cors.sh", "b2-cors.ps1"];
 function contentSecurityPolicy(): Plugin {
   const apiBase = process.env.VITE_API_BASE;
   return {
-    name: "mathpad-csp",
+    name: "mintmath-csp",
     transformIndexHtml: {
       order: "post",
       handler(html, ctx) {
@@ -52,7 +52,7 @@ function contentSecurityPolicy(): Plugin {
 function serveCorsScript(): Plugin {
   const src = (name: string) => new URL(`./scripts/${name}`, import.meta.url);
   return {
-    name: "mathpad-b2-cors-script",
+    name: "mintmath-b2-cors-script",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const name = CORS_SCRIPTS.find((n) => req.url?.split("?")[0] === `${server.config.base}${n}`);
