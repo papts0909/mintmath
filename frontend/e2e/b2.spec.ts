@@ -185,3 +185,32 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
   await expect(page.getByRole("button", { name: "☁ Kết nối Backblaze B2" })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("mathpad.b2.v1"))).toBeNull();
 });
+
+test("tells a missing CORS rule apart from a network that blocks B2", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  // The host is reachable, but the bucket has no CORS rule for this origin:
+  // the browser fails the signed call (as a TypeError) while a no-cors request
+  // to the same host still goes through.
+  await page.route(`https://${FAKE_B2.endpoint}/**`, async (r) => {
+    const signed = "authorization" in (await r.request().allHeaders());
+    if (signed || r.request().method() === "OPTIONS") return r.abort("failed");
+    return r.fulfill({ status: 403, body: "" });
+  });
+  await freshPage(page);
+  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await connect(page);
+  await expect(panel(page).getByRole("alert")).toContainText(
+    "chưa có quy tắc CORS cho địa chỉ http://localhost:5173",
+  );
+  await expect(panel(page).getByRole("alert")).toContainText("node scripts/b2-cors.mjs");
+
+  // Now the network itself blocks Backblaze.
+  await page.unroute(`https://${FAKE_B2.endpoint}/**`);
+  await page.route(`https://${FAKE_B2.endpoint}/**`, (r) => r.abort("blockedbyclient"));
+  await panel(page)
+    .getByRole("form", { name: "Kết nối Backblaze B2" })
+    .getByRole("button", { name: "Kết nối" })
+    .click();
+  await expect(panel(page).getByRole("alert")).toContainText("chặn Backblaze");
+});

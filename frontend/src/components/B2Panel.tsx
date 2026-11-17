@@ -118,8 +118,9 @@ function ConnectForm() {
           </li>
           {isNativeApp() ? null : (
             <li>
-              Bản web cần bật CORS cho bucket với địa chỉ <code>{location.origin}</code> (xem docs/B2.md). App
-              máy tính và Android không cần.
+              Bản web cần quy tắc CORS trên bucket cho địa chỉ <code>{location.origin}</code>. Trên máy có
+              Node, trong thư mục <code>frontend</code> chạy <code>node scripts/b2-cors.mjs</code> (dùng
+              Master Application Key). App máy tính và Android không cần bước này. Chi tiết: docs/B2.md.
             </li>
           )}
         </ol>
