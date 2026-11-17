@@ -203,7 +203,7 @@ test("layout fits a 380 px wide screen and follows the dark theme", async ({ pag
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: "test-results/narrow-light.png" });
-  await page.getByText("⚙ Cài đặt").click();
+  await page.getByText("Cài đặt").click();
   await page.getByRole("combobox").selectOption("dark");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgb(22, 24, 28)");

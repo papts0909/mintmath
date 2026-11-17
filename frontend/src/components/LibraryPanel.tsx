@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Archive, Cloud, Copy, FileInput, FilePlus, Laptop, Trash2, X } from "lucide-react";
 import { downloadBlob } from "../api/exportClient";
 import { useDocStore } from "../core/docStore";
 import { DocFormatError } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
 import { newId } from "../core/id";
+import { forgetDoc, openDoc, openNewDoc } from "../core/tabs";
+import type { Doc } from "../core/types";
 import B2Panel from "./B2Panel";
 import {
   deleteDoc,
@@ -25,14 +28,11 @@ interface Props {
 }
 
 /** Show another document right away and store the one that was open. */
-export async function switchToDoc(load: () => void): Promise<void> {
-  const previous = useDocStore.getState().doc;
-  load();
-  try {
-    await putDoc(previous);
-  } catch {
-    /* the library may be unavailable (private mode) */
-  }
+/** Open a document in a tab (the one already showing it, or a new one).
+ *  The document that was showing stays saved in the library. */
+export async function switchToDoc(doc: Doc | null): Promise<void> {
+  if (doc) openDoc(doc);
+  else openNewDoc();
 }
 
 const fmt = (iso: string) => {
@@ -75,7 +75,7 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
   const open = async (id: string) => {
     const doc = await getDoc(id);
     if (!doc) return void refresh();
-    await switchToDoc(() => useDocStore.getState().loadDoc(doc));
+    await switchToDoc(doc);
     onClose();
   };
 
@@ -93,12 +93,12 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
   const remove = async (entry: LibraryEntry) => {
     if (!window.confirm(`Xóa “${entry.title || "Không tiêu đề"}” khỏi thư viện trên máy này?`)) return;
     await deleteDoc(entry.id);
-    if (entry.id === currentId) useDocStore.getState().newDoc();
+    await forgetDoc(entry.id);
     await refresh();
   };
 
   const newDoc = async () => {
-    await switchToDoc(() => useDocStore.getState().newDoc());
+    await switchToDoc(null);
     onClose();
   };
 
@@ -130,7 +130,7 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
     }
     if (lastDoc && files.length === 1) {
       const doc = lastDoc;
-      await switchToDoc(() => useDocStore.getState().loadDoc(doc));
+      await switchToDoc(doc);
     }
     await refresh();
   };
@@ -148,15 +148,17 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
       <div className="panel-head">
         <h2>Thư viện</h2>
         <button type="button" onClick={onClose} aria-label="Đóng thư viện">
-          ✕
+          <X className="icon" aria-hidden="true" />
         </button>
       </div>
       <div className="tabs" role="tablist" aria-label="Nơi lưu">
         <button type="button" role="tab" aria-selected={tab === "local"} onClick={() => onTab("local")}>
-          💻 Trên máy
+          <Laptop className="icon" aria-hidden="true" />
+          Trên máy
         </button>
         <button type="button" role="tab" aria-selected={tab === "b2"} onClick={() => onTab("b2")}>
-          ☁ Backblaze B2
+          <Cloud className="icon" aria-hidden="true" />
+          Backblaze B2
         </button>
       </div>
       {tab === "b2" ? (
@@ -170,16 +172,19 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
         <>
           <div className="library-actions">
             <button type="button" onClick={() => void newDoc()}>
-              + Bài mới
+              <FilePlus className="icon" aria-hidden="true" />
+              Bài mới
             </button>
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
               title=".tex, .mintmath.json hoặc bản sao lưu"
             >
+              <FileInput className="icon" aria-hidden="true" />
               Nhập tệp
             </button>
             <button type="button" onClick={() => void backup()} title="Tải toàn bộ thư viện thành một tệp">
+              <Archive className="icon" aria-hidden="true" />
               Sao lưu
             </button>
             <input
@@ -230,7 +235,7 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
                     aria-label={`Nhân bản ${e.title}`}
                     title="Nhân bản"
                   >
-                    ⧉
+                    <Copy className="icon" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -238,14 +243,14 @@ export default function LibraryPanel({ onClose, onMessage, tab, onTab }: Props) 
                     aria-label={`Xóa ${e.title}`}
                     title="Xóa"
                   >
-                    🗑
+                    <Trash2 className="icon" aria-hidden="true" />
                   </button>
                 </span>
               </li>
             ))}
           </ul>
           <p className="muted small">
-            Bài được lưu trên thiết bị này. Dùng “Sao lưu” hoặc tab ☁ Backblaze B2 để giữ bản ở nơi khác hay
+            Bài được lưu trên thiết bị này. Dùng “Sao lưu” hoặc tab Backblaze B2 để giữ bản ở nơi khác hay
             chuyển sang máy khác.
           </p>
         </>

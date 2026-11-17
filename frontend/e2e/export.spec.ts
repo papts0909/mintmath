@@ -77,7 +77,7 @@ test("print preview shows the PDF in the page", async ({ page }) => {
   await page.getByRole("button", { name: "Xem trước" }).click();
   await expect(page.getByRole("dialog", { name: "Xem trước bản in" })).toBeVisible();
   await expect(page.locator(".preview iframe")).toHaveAttribute("src", /^blob:/);
-  await page.getByRole("button", { name: "Đóng" }).click();
+  await page.getByRole("button", { name: "Đóng", exact: true }).click();
   await expect(page.locator(".preview")).toHaveCount(0);
 });
 

@@ -40,7 +40,7 @@ test("everyday use causes no CSP violation", async ({ page }) => {
     expect(readFileSync((await dl.path())!).length).toBeGreaterThan(100);
   }
 
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   const form = page.getByRole("form", { name: "Kết nối Backblaze B2" });
   await form.getByLabel("keyID").fill(FAKE_B2.keyId);
   await form.getByLabel("applicationKey").fill(FAKE_B2.appKey);

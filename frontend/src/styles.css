@@ -86,6 +86,44 @@ input {
   color: inherit;
 }
 
+/* Interface text (buttons, labels, tabs, menus): Poppins, with Be Vietnam Pro
+   for the Vietnamese letters Poppins lacks. Document text keeps the body font. */
+:root {
+  --ui-font: "Poppins", "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+button,
+label,
+summary,
+select,
+[role="tab"],
+.group-label,
+.status-bar,
+.toast,
+.panel-head h2,
+.b2-panel h3,
+.b2-cta strong,
+.b2-cors strong,
+.b2-cors h4 {
+  font-family: var(--ui-font);
+}
+button,
+summary {
+  font-weight: 500;
+}
+.icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+button:has(> .icon),
+summary:has(> .icon),
+.b2-cta strong:has(> .icon) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 button {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -897,4 +935,83 @@ button.cta:hover:not(:disabled) {
 .shortcut-panel.library-panel,
 .side-panel.library-panel {
   flex-basis: 340px;
+}
+
+/* ---------- document tabs ---------- */
+.tab-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 12px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--ui-font);
+}
+.tab-list {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.doc-tab {
+  display: flex;
+  align-items: center;
+  max-width: 220px;
+  min-width: 0;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: -1px;
+}
+.doc-tab.is-active {
+  background: var(--bg);
+  border-color: var(--border);
+}
+.doc-tab [role="tab"] {
+  border: none;
+  background: none;
+  padding: 7px 4px 7px 12px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.doc-tab.is-active [role="tab"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.doc-tab:not(.is-active):hover {
+  background: var(--accent-soft);
+}
+.doc-tab-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+.doc-tab-close,
+.doc-tab-new {
+  border: none;
+  background: none;
+  padding: 4px;
+  margin-right: 4px;
+  border-radius: 6px;
+  color: var(--muted);
+  line-height: 0;
+}
+.doc-tab-close:hover,
+.doc-tab-new:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.doc-tab-new {
+  margin: 0 0 4px;
+  padding: 6px;
+}
+@media print {
+  .tab-bar {
+    display: none;
+  }
 }

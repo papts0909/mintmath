@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Cloud, CloudUpload, Download, FileInput, RefreshCw, RotateCw, Trash2, Upload } from "lucide-react";
 import { downloadBlob } from "../api/exportClient";
 import { DEFAULT_PREFIX, validateConfig, type B2Config } from "../cloud/b2";
 import {
@@ -232,6 +233,7 @@ function CorsHelp() {
         Google, dán lệnh macOS / Linux vào đó. Hoặc dùng MintMath trên điện thoại Android.
       </p>
       <button type="button" disabled={busy !== null} onClick={() => void connectB2(cors.cfg)}>
+        <RefreshCw className="icon" aria-hidden="true" />
         Thử kết nối lại
       </button>
     </section>
@@ -262,7 +264,10 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
     return (
       <div className="b2-panel">
         <div className="b2-cta">
-          <strong>☁ Lưu bài lên Backblaze B2</strong>
+          <strong>
+            <Cloud className="icon" aria-hidden="true" />
+            Lưu bài lên Backblaze B2
+          </strong>
           <p>
             Dùng tài khoản B2 của riêng bạn để lưu bài và mở lại trên máy khác: máy tính, điện thoại, bản web.
           </p>
@@ -281,7 +286,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
   const open = async (key: string) => {
     const doc = await openFromB2(key);
     if (doc) {
-      await switchToDoc(() => useDocStore.getState().loadDoc(doc));
+      await switchToDoc(doc);
       onMessage(`Đã mở “${doc.title || "Không tiêu đề"}” từ B2`);
       onOpened();
     }
@@ -290,7 +295,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
   return (
     <div className="b2-panel">
       <p className="b2-account">
-        ☁ <b>{config.bucket}</b>
+        <Cloud className="icon" aria-hidden="true" /> <b>{config.bucket}</b>
         <span className="muted"> /{prefix}</span>
       </p>
       <div className="library-actions">
@@ -301,12 +306,15 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
           onClick={() => void saveCurrentToB2()}
           title="Ctrl+S"
         >
-          ⬆ Lưu bài đang mở
+          <CloudUpload className="icon" aria-hidden="true" />
+          Lưu bài đang mở
         </button>
         <button type="button" disabled={busy !== null} onClick={() => void syncLibraryWithB2()}>
-          ⇅ Đồng bộ thư viện
+          <RefreshCw className="icon" aria-hidden="true" />
+          Đồng bộ thư viện
         </button>
         <button type="button" disabled={busy !== null} onClick={() => uploadInput.current?.click()}>
+          <Upload className="icon" aria-hidden="true" />
           Tải tệp lên
         </button>
         <button
@@ -315,7 +323,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
           onClick={() => void refreshB2()}
           aria-label="Làm mới danh sách"
         >
-          ↻
+          <RotateCw className="icon" aria-hidden="true" />
         </button>
         <input
           ref={uploadInput}
@@ -374,7 +382,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
                       void deleteFromB2(f.key);
                   }}
                 >
-                  🗑
+                  <Trash2 className="icon" aria-hidden="true" />
                 </button>
               </span>
             </li>
@@ -405,7 +413,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
                         aria-label={`Nhập ${name}`}
                         onClick={() => void open(f.key)}
                       >
-                        ⤵
+                        <FileInput className="icon" aria-hidden="true" />
                       </button>
                     ) : null}
                     <button
@@ -417,7 +425,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
                         if (blob) downloadBlob(blob, name.split("/").pop() ?? name);
                       }}
                     >
-                      ⬇
+                      <Download className="icon" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -427,7 +435,7 @@ export default function B2Panel({ onMessage, onOpened }: Props) {
                         if (window.confirm(`Xóa “${name}” trên B2?`)) void deleteFromB2(f.key);
                       }}
                     >
-                      🗑
+                      <Trash2 className="icon" aria-hidden="true" />
                     </button>
                   </span>
                 </li>
