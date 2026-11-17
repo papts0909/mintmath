@@ -307,8 +307,21 @@ input[type="search"] {
   color: var(--text);
   font-weight: 700;
 }
+.gutter {
+  position: relative;
+}
 .join-mark {
   color: var(--accent);
+  /* Pinned to the left edge, out of the flow, so the numbers stay in one column. */
+  position: absolute;
+  left: 2px;
+}
+/* Every line keeps a slot for the type mark ("T" on text lines), so the
+   numbers line up whatever the line type. */
+.gutter::after {
+  content: "";
+  flex: 0 0 9px;
+  margin-left: 3px;
 }
 
 .line-body {
@@ -371,7 +384,6 @@ input[type="search"] {
 .line-text .gutter::after {
   content: "T";
   font-size: 0.7rem;
-  margin-left: 3px;
   opacity: 0.6;
 }
 
@@ -484,7 +496,7 @@ kbd {
     max-height: none;
   }
   .gutter {
-    flex-basis: 30px;
+    flex-basis: 40px;
   }
   .math-line math-field {
     font-size: 1.25rem;
@@ -1126,6 +1138,10 @@ button.cta:hover:not(:disabled) {
   outline-offset: 2px;
 }
 /* The line being edited: a thick frame and a solid bar on the left. */
+:root[data-theme^="eink"] .line {
+  /* Same border width focused or not, so nothing shifts. */
+  border-width: 2px;
+}
 :root[data-theme^="eink"] .line.is-focused {
   border: 2px solid var(--text);
   box-shadow: inset 8px 0 0 var(--text) !important;
