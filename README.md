@@ -1,18 +1,23 @@
-# MintMath (mintmath)
+# MintMath
 
-MintMath là ứng dụng web để trình bày bài giải toán theo từng dòng, gõ hoàn toàn bằng bàn phím. Mỗi dòng là một dòng toán (MathLive) hoặc một dòng chữ tiếng Việt có dấu. Bài làm xuất được ra `.tex`, PDF, PNG, và lưu được lên tài khoản Backblaze B2 của chính người dùng.
+MintMath là app để viết bài giải toán theo từng dòng, gõ bằng bàn phím là chính. Mỗi dòng là một dòng toán (dùng MathLive) hoặc một dòng chữ tiếng Việt. Viết xong thì xuất ra `.tex`, PDF hoặc PNG, và nếu muốn thì lưu lên tài khoản Backblaze B2 của mình để mở lại ở máy khác.
 
-- **Frontend:** React, Vite, TypeScript (strict), Zustand, MathLive. Thư mục `frontend/`.
-- **Backend:** FastAPI, chỉ lo việc xuất file: LaTeX → PDF bằng Tectonic hoặc XeLaTeX, PDF → PNG bằng `pdftoppm`. Thư mục `backend/`.
-- **Dữ liệu:** nằm trên thiết bị (Thư viện, IndexedDB) và, nếu người dùng kết nối, trong bucket Backblaze B2 của họ. Backend không có cơ sở dữ liệu và không giữ khóa.
+Bản web: https://monglinhnguyendat.id.vn/mintmath/
 
-MintMath là **PWA**: cài được như ứng dụng lên máy tính (Chrome/Edge), Android, iPhone và iPad, và chạy offline. Soạn bài, lưu trên máy, xuất `.tex`, In/Lưu PDF và xuất PNG đều chạy ngay trên thiết bị. Máy chủ xuất file là **tùy chọn**: khi có, nút PDF/PNG cho bản dàn trang LaTeX chuẩn; khi không có hoặc mất mạng, app tự dùng bản xuất tại máy.
+Repo gồm hai phần:
 
-Tài liệu kèm theo: [docs/DECISIONS.md](docs/DECISIONS.md) (kết quả spike, các quyết định), [docs/DEPLOY.md](docs/DEPLOY.md) (triển khai), [docs/BACKLOG.md](docs/BACKLOG.md).
+- `frontend/`: React + Vite + TypeScript, state bằng Zustand, ô toán là MathLive.
+- `backend/`: FastAPI, chỉ dùng để xuất file (LaTeX → PDF bằng Tectonic hoặc XeLaTeX, PDF → PNG bằng `pdftoppm`). Không có cơ sở dữ liệu, không giữ khóa B2 của ai.
 
-## Chạy khi phát triển
+Backend không bắt buộc. Không có nó, app vẫn soạn bài, lưu, xuất `.tex`, in/lưu PDF và xuất PNG ngay trên máy. Có backend thì nút PDF/PNG cho bản dàn trang bằng LaTeX đẹp hơn.
 
-Yêu cầu: Node 22, Python 3.12, một engine TeX (`tectonic`, hoặc `xelatex` từ TeX Live), `pdftoppm` (poppler-utils) và font DejaVu.
+Ghi chú thêm nằm trong `docs/`: [DECISIONS.md](docs/DECISIONS.md) (vì sao chọn cách này cách kia), [DEPLOY.md](docs/DEPLOY.md), [B2.md](docs/B2.md), [ANDROID.md](docs/ANDROID.md), [DESKTOP.md](docs/DESKTOP.md), [BACKLOG.md](docs/BACKLOG.md).
+
+## Chạy trên máy
+
+Cần Node 22 và Python 3.12. Muốn xuất PDF bằng LaTeX thì cài thêm `tectonic` (hoặc `xelatex` của TeX Live), `pdftoppm` (gói poppler-utils) và font DejaVu.
+
+Backend:
 
 ```bash
 cd backend
@@ -21,22 +26,24 @@ python3.12 -m venv .venv
 .venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
+Frontend, ở một terminal khác:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Mở http://localhost:5173. Vite chuyển `/api/*` sang cổng 8000.
+Mở http://localhost:5173. Vite tự chuyển `/api/*` sang cổng 8000.
 
-Muốn chạy bằng Docker (backend dùng image có Tectonic):
+Hoặc chạy cả hai bằng Docker:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-### Kiểm thử
+### Test
 
 ```bash
 cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q
@@ -50,122 +57,122 @@ cd frontend && npm run lint && npm test
 cd frontend && npx playwright test
 ```
 
-Playwright tự bật backend (cổng 8000) và Vite (cổng 5173). Các test B2 dùng một B2 giả lập (API S3 trong bộ nhớ), không cần tài khoản thật. Test biên dịch PDF ở backend tự bỏ qua nếu máy không có engine TeX.
+Playwright tự bật backend và Vite. Test B2 chạy với một B2 giả trong bộ nhớ nên không cần tài khoản. Máy không có TeX thì test biên dịch PDF tự bỏ qua.
 
-## Cài lên thiết bị (dùng cá nhân, chia sẻ bạn bè)
+## Cài lên máy, điện thoại
 
-1. Đưa bản web lên một chỗ có HTTPS: GitHub Pages (workflow có sẵn), Cloudflare Pages hoặc Netlify. Xem [docs/DEPLOY.md](docs/DEPLOY.md), mục "Chỉ bản web (PWA)". Không bắt buộc có backend.
-2. Gửi đường link cho bạn bè, rồi cài như sau:
-   - **Máy tính** (Chrome, Edge): bấm nút "Cài ứng dụng" trên thanh công cụ, hoặc biểu tượng cài trên thanh địa chỉ.
-   - **Android** (Chrome): bấm "Cài ứng dụng" hoặc menu ⋮ → "Cài đặt ứng dụng".
-   - **iPhone, iPad** (Safari): bấm Chia sẻ → "Thêm vào MH chính". Nút "Cài lên máy" trong app có hướng dẫn.
-3. Sau lần mở đầu tiên, app chạy được khi không có mạng. Khi có bản mới, app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
+MintMath là PWA nên cài được thẳng từ trình duyệt và chạy được khi không có mạng:
 
-Trên màn cảm ứng:
-- Bấm vào dòng toán sẽ mở bàn phím toán. Tab **MintMath** có ∀ ∃ ⇒ ⇔ ∈ ℝ…, hệ phương trình, ma trận, ma trận bổ sung [A|b], thêm hàng/cột, phân số, căn.
-- Thanh nút ghim trên cùng thay cho các phím Ctrl/Alt: thêm dòng toán/chữ, nối dòng, đổi loại, đưa dòng lên/xuống, nhân đôi, xóa, hoàn tác.
+- Máy tính (Chrome, Edge): bấm "Cài ứng dụng" trong app hoặc biểu tượng cài trên thanh địa chỉ.
+- Android (Chrome): "Cài ứng dụng", hoặc menu ⋮ → "Cài đặt ứng dụng".
+- iPhone, iPad (Safari): Chia sẻ → "Thêm vào MH chính".
 
-| Xuất | Không có máy chủ / ngoại tuyến | Có máy chủ |
+Có bản mới thì app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
+
+Ngoài ra còn có app cài đặt hẳn hoi, build bằng GitHub Actions:
+
+- Android (APK, Capacitor): xem [docs/ANDROID.md](docs/ANDROID.md).
+- macOS `.dmg` và Windows `.exe`/`.msi` (Tauri): xem [docs/DESKTOP.md](docs/DESKTOP.md). App chưa ký số nên lần đầu mở sẽ bị hệ điều hành hỏi.
+
+Bản web tự đưa lên GitHub Pages mỗi khi `frontend/` trên `main` thay đổi. Cách đặt lên chỗ khác (Cloudflare Pages, Netlify) có trong [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## Dùng app
+
+- **Tab**: mở nhiều bài cùng lúc, mỗi bài một tab. Đóng tab không mất bài, bài vẫn nằm trong Thư viện.
+- **Thư viện**: bài nào đang viết cũng tự lưu vào thư viện trên máy (IndexedDB). Tìm theo tiêu đề hoặc nội dung, nhân bản, xóa. "Sao lưu" tải cả thư viện về một tệp `.json` để chuyển sang máy khác.
+- **Mở tệp** nhận `.mintmath.json`, bản sao lưu, và `.tex`. File `.tex` do MintMath xuất ra thì mở lại y nguyên. File LaTeX viết tay cũng đọc được phần lớn: tiêu đề, đoạn văn, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline`, `itemize`, `enumerate`.
+- **Giao diện**: mặc định là kiểu "Giấy", chỉ đen trắng giống máy đọc sách, sáng hay tối theo cài đặt của máy. Muốn có màu thì chọn trong ⚙ Cài đặt.
+- **Zen** (Ctrl+.): ẩn hết nút, chỉ chừa phần làm toán.
+- Trên màn cảm ứng, bấm vào dòng toán sẽ hiện bàn phím toán, có tab riêng MintMath với các ký hiệu hay dùng (∀ ∃ ⇒ ∈ ℝ…), hệ phương trình, ma trận, [A|b]. Thanh nút ở trên thay cho các phím tắt: thêm dòng, đổi loại, đưa lên/xuống, xóa, hoàn tác.
+
+Xuất file:
+
+| | Không có backend / mất mạng | Có backend |
 | --- | --- | --- |
-| LaTeX (.tex) | Dựng ngay trên máy, giống hệt bản máy chủ | như cột bên |
-| PDF | Mở hộp thoại In → "Lưu thành PDF" | PDF dàn trang bằng LaTeX |
-| PNG | Ảnh khổ A4 dựng trên máy | Ảnh từ PDF LaTeX |
-| In | Luôn chạy trên máy | |
-
-## App máy tính (.dmg, .exe)
-
-Workflow **Desktop apps** build file `.dmg` (macOS, chip Apple và Intel) và `.exe`/`.msi` (Windows) bằng Tauri. Cách tải, cài (app chưa ký số) và tự build: [docs/DESKTOP.md](docs/DESKTOP.md).
-
-## App Android (APK)
-
-Workflow **Android APK** trên GitHub Actions tự build file APK (Capacitor) mỗi khi frontend thay đổi. Cách tải, cài và ký: [docs/ANDROID.md](docs/ANDROID.md). Trong app Android: xuất file qua bảng Chia sẻ; PDF tạo ngay trong app.
+| LaTeX (.tex) | làm trên máy, giống hệt bản backend | |
+| PDF | mở hộp thoại In → "Lưu thành PDF" | PDF dàn trang bằng LaTeX |
+| PNG | ảnh khổ A4 làm trên máy | ảnh cắt từ PDF LaTeX |
 
 ## Lưu trên Backblaze B2
 
-Mỗi người dùng **tài khoản B2 của riêng mình**: bấm **☁ Kết nối Backblaze B2**, rồi nhập keyID, applicationKey, tên bucket và endpoint. Sau đó dùng được:
-- **☁ Lưu lên B2** (Ctrl+S), mở bài từ B2 trên máy khác.
-- **⇅ Đồng bộ thư viện** giữa máy và B2. Không bao giờ xóa; bài sửa ở cả hai nơi được giữ cả hai bản.
-- Tải tệp bất kỳ lên/xuống; **⬆ B2** lưu bản `.tex` và PDF.
+Ai dùng thì tự tạo tài khoản B2 của mình (10 GB đầu miễn phí), tạo bucket và một khóa chỉ dùng cho bucket đó, rồi bấm "Kết nối Backblaze B2" trong app. Khóa chỉ lưu trên máy đó, không gửi đi đâu khác ngoài Backblaze.
 
-Chạy được trên bản web/PWA (cần CORS trên bucket), app máy tính và app Android. Hướng dẫn từng bước: [docs/B2.md](docs/B2.md).
+Kết nối rồi thì có:
 
-## Thư viện bài tập và nhập LaTeX
+- "Lưu lên B2" (Ctrl+S), và mở bài từ B2 trên máy khác.
+- "Đồng bộ thư viện" hai chiều giữa máy và B2. Đồng bộ không bao giờ xóa. Bài bị sửa ở cả hai nơi thì giữ cả hai bản.
+- Tải tệp bất kỳ lên/xuống. Nút "B2" trong nhóm Xuất lưu luôn bản `.tex` và PDF.
 
-- **📚 Thư viện**: mọi bài đang soạn tự lưu vào thư viện trên thiết bị (IndexedDB). Trong thư viện có thể tìm theo tiêu đề hoặc nội dung, mở, nhân bản, xóa. **Sao lưu** tải toàn bộ thư viện thành một tệp `.json`; **Nhập tệp** khôi phục tệp đó trên máy khác (bài trùng thì giữ bản mới hơn).
-- **Mở tệp / Nhập tệp** nhận `.mintmath.json`, bản sao lưu và **`.tex`**:
-  - File `.tex` do MintMath xuất ra nhập lại đúng nguyên bài.
-  - File LaTeX viết tay đọc được: `\section`/`\title` thành tiêu đề, đoạn văn thành dòng chữ, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline` thành dòng toán (mỗi hàng của align là một dòng nối), `itemize`/`enumerate` thành dòng có dấu đầu dòng.
-  - Đoạn văn có công thức `$…$` xen giữa thành một dòng toán, phần chữ bọc trong `\text{…}`.
-- Thư viện nằm trên từng thiết bị. Muốn dùng chung giữa máy tính và điện thoại thì kết nối Backblaze B2 (xem dưới), hoặc dùng Sao lưu rồi Nhập.
+Bản web cần bật CORS cho bucket một lần. Khi thiếu, app sẽ đưa sẵn lệnh để chép vào Terminal hoặc PowerShell, không cần cài gì thêm. App Android và app máy tính thì không cần bước này. Chi tiết trong [docs/B2.md](docs/B2.md).
 
-## Biến môi trường
-
-Xem [.env.example](.env.example). Không commit giá trị thật.
-
-| Biến | Nơi dùng | Ý nghĩa |
-| --- | --- | --- |
-| `VITE_API_BASE` | frontend | URL backend khi khác origin (production) |
-| `VITE_EXPORT_SERVER` | frontend | `off` = không dùng máy chủ xuất file, mọi định dạng xuất tại máy |
-| `VITE_BASE` | frontend (build) | Đường dẫn con khi đặt app dưới thư mục, ví dụ `/mintmath/` trên GitHub Pages |
-| `MATHPAD_CORS_ORIGINS` | backend | Các origin được phép gọi API, cách nhau bằng dấu phẩy |
-| `MATHPAD_RATE_LIMIT` | backend | Số lượt xuất mỗi phút mỗi IP (mặc định 20) |
-| `MATHPAD_MAX_CONCURRENT` | backend | Số lượt biên dịch đồng thời (mặc định 2) |
-| `MATHPAD_COMPILE_TIMEOUT` | backend | Giới hạn thời gian biên dịch, tính bằng giây (mặc định 20) |
-| `MATHPAD_TECTONIC` | backend | Đường dẫn engine TeX, nếu không dùng bản trong PATH |
-| `MATHPAD_TRUST_PROXY` | backend | `1` khi chạy sau reverse proxy, để lấy IP từ `X-Forwarded-For` |
+Phần B2 mới chạy với B2 giả trong test. Ai dùng tài khoản thật mà gặp lỗi thì báo lại.
 
 ## Phím tắt
 
-| Phím | Hành vi |
+| Phím | Làm gì |
 | --- | --- |
-| Enter | Tạo dòng mới bên dưới, cùng loại |
-| Shift+Enter | Tạo dòng toán nối (cùng khối `align*` khi xuất) |
-| Backspace ở dòng trống | Xóa dòng, focus lên dòng trên |
-| ↑ / ↓ ở mép | Sang dòng trên / dưới |
+| Enter | Thêm dòng mới bên dưới, cùng loại |
+| Shift+Enter | Thêm dòng toán nối tiếp (xuất ra cùng một khối `align*`) |
+| Backspace ở dòng trống | Xóa dòng, quay lên dòng trên |
+| ↑ / ↓ ở mép dòng | Sang dòng trên / dưới |
 | Ctrl+' | Đổi dòng giữa toán và chữ |
 | Alt+↑ / Alt+↓ | Di chuyển dòng |
 | Ctrl+D | Nhân đôi dòng |
-| Ctrl+Z / Ctrl+Shift+Z | Hoàn tác / làm lại (thao tác dòng; bên trong ô toán do MathLive xử lý) |
-| `,` trong ma trận | Sang cột kế, hoặc thêm cột ở cuối hàng (trong hệ phương trình thì là dấu phẩy thường) |
+| Ctrl+Z / Ctrl+Shift+Z | Hoàn tác / làm lại thao tác trên dòng (gõ bên trong ô toán thì MathLive tự lo) |
+| `,` trong ma trận | Sang cột kế, cuối hàng thì thêm cột (trong hệ phương trình là dấu phẩy thường) |
 | `;` trong ma trận, hệ | Sang hàng kế, hoặc thêm hàng |
 | Tab trong ma trận | Sang ô kế |
-| `/` `^` `_` | Phân số, mũ, chỉ số dưới. `d1` thành `d₁` (tắt được) |
-| Ctrl+S | Lưu lên Backblaze B2 (khi đã kết nối; chưa kết nối thì mở form kết nối) |
-| Ctrl+/ | Bật/tắt bảng lệnh tắt |
-| Bấm số dòng, Shift+bấm | Chọn một hoặc nhiều dòng để sao chép hoặc xóa; kéo số dòng để đổi thứ tự |
+| `/` `^` `_` | Phân số, mũ, chỉ số dưới. Gõ `d1` thành `d₁` (tắt được trong Cài đặt) |
+| Ctrl+S | Lưu lên B2 (chưa kết nối thì mở form kết nối) |
+| Ctrl+. | Bật/tắt Zen |
+| Ctrl+/ | Bảng lệnh tắt |
+| Bấm số dòng, Shift+bấm | Chọn một hay nhiều dòng để chép hoặc xóa. Kéo số dòng để đổi thứ tự |
 
-Lệnh tắt chữ (gõ trong dòng toán):
+Gõ chữ trong dòng toán sẽ tự đổi thành ký hiệu:
 
 | Gõ | Ra | Gõ | Ra |
 | --- | --- | --- | --- |
 | `forall` | ∀ | `Rbb` `Zbb` `Nbb` `Qbb` `Cbb` | ℝ ℤ ℕ ℚ ℂ |
 | `exists` | ∃ | `=>` | ⇒ |
-| `element` | ∈ | `<=>` hoặc `iff` | ⇔ |
+| `element` | ∈ | `<=>`, `iff` | ⇔ |
 | `notin` | ∉ | `->` | → |
 | `subset` | ⊂ | `!=` | ≠ |
 | `union` | ∪ | `<=` `>=` | ≤ ≥ |
 | `inter` | ∩ | `+-` | ± |
 | `empty` | ∅ | `inf` | ∞ |
 | `sqrt` | căn bậc hai | `sum` `int` `lim` | ∑ ∫ lim |
-| `sys` | hệ phương trình (ngoặc trái) | `mat` `pat` `dat` | ma trận [ ], ( ), định thức |
+| `sys` | hệ phương trình | `mat` `pat` `dat` | ma trận [ ], ( ), định thức |
 | `amat` | ma trận bổ sung có vạch dọc | | |
 
-Danh sách đầy đủ nằm ở `frontend/src/core/shortcuts.ts`, cũng hiện trong bảng Ctrl+/.
+Danh sách đủ ở `frontend/src/core/shortcuts.ts`, trong app thì bấm Ctrl+/.
 
-## Định dạng tài liệu
+## Cấu hình
 
-Tài liệu là một đối tượng JSON `{version: 1, id, title, lines: [{id, type: "math"|"text", content, joinPrev?}], updatedAt}`. Cùng một cấu trúc dùng cho localStorage, file `.mintmath.json` trên máy hoặc trên B2, và thân request xuất file. Kiểu dữ liệu khai báo ở `frontend/src/core/types.ts` và khớp với `backend/app/models.py`.
+Backend và bản build đọc các biến sau. Mẫu có trong [.env.example](.env.example); file `.env` thật thì đừng commit.
 
-API backend: `GET /api/health`, `POST /api/export/tex`, `POST /api/export/pdf`, `POST /api/export/png?dpi=200` (zip nếu nhiều trang). Giới hạn: thân request 1 MB, 2.000 dòng, biên dịch 20 giây, DPI từ 72 đến 600. Nội dung dòng toán chứa các lệnh đọc ghi file hoặc định nghĩa macro (`\input`, `\write`, `\def`, `\catcode`, `\csname`…) bị từ chối với lỗi 400 kèm `lineId`.
+| Biến | Dùng ở | Để làm gì |
+| --- | --- | --- |
+| `VITE_API_BASE` | frontend | URL backend nếu đặt ở domain khác |
+| `VITE_EXPORT_SERVER` | frontend | `off` để không gọi backend, mọi thứ xuất trên máy |
+| `VITE_BASE` | frontend (lúc build) | Đường dẫn con, ví dụ `/mintmath/` trên GitHub Pages |
+| `MATHPAD_CORS_ORIGINS` | backend | Các domain được gọi API, cách nhau bằng dấu phẩy |
+| `MATHPAD_RATE_LIMIT` | backend | Số lần xuất mỗi phút cho mỗi IP (mặc định 20) |
+| `MATHPAD_MAX_CONCURRENT` | backend | Số lần biên dịch chạy cùng lúc (mặc định 2) |
+| `MATHPAD_COMPILE_TIMEOUT` | backend | Thời gian tối đa cho một lần biên dịch, tính bằng giây (mặc định 20) |
+| `MATHPAD_TECTONIC` | backend | Đường dẫn tới engine TeX nếu không có sẵn trong PATH |
+| `MATHPAD_TRUST_PROXY` | backend | Đặt `1` khi chạy sau reverse proxy để lấy IP từ `X-Forwarded-For` |
 
-## Giới hạn đã biết
+Các biến backend vẫn mang tiền tố `MATHPAD_` từ hồi app còn tên cũ. Đổi tên thì các bản đã triển khai phải sửa cấu hình theo, nên tạm giữ.
 
-- Tectonic chưa chạy thử được trong môi trường phát triển của agent (không có Docker). Đã kiểm chứng bằng XeLaTeX; image Docker được build và chạy thử trong job CI `docker`. Xem DECISIONS.md.
-- Backblaze B2 mới được test với B2 giả lập. Cần thử với tài khoản B2 thật.
-- PDF xuất tại máy là bản in của trình duyệt, không phải dàn trang LaTeX. Muốn bản LaTeX chuẩn thì cần máy chủ xuất file, hoặc tải `.tex` về rồi biên dịch.
-- Bản web/PWA cần bật CORS trên bucket B2 (xem [docs/B2.md](docs/B2.md)); app desktop và Android thì không cần.
+## Định dạng bài
 
-## Việc cần người làm
+Một bài là một object JSON:
 
-1. **Backblaze B2** (tùy chọn, mỗi người tự làm): tạo tài khoản, bucket private và application key giới hạn trong bucket đó, rồi bấm **☁ Kết nối Backblaze B2** trong app. Hướng dẫn: [docs/B2.md](docs/B2.md).
-2. **Đưa bản web lên mạng**: bật GitHub Pages (Settings → Pages → Source: GitHub Actions), rồi chạy workflow "Deploy PWA to GitHub Pages". Repo private thì GitHub Pages cần gói trả phí; khi đó dùng Cloudflare Pages hoặc Netlify (miễn phí). Máy chủ xuất PDF là tùy chọn.
+```json
+{ "version": 1, "id": "…", "title": "…", "updatedAt": "…",
+  "lines": [{ "id": "…", "type": "math", "content": "x^2+1=0", "joinPrev": false }] }
+```
+
+`type` là `"math"` hoặc `"text"`. Cùng định dạng này được dùng để lưu trên máy, trong file `.mintmath.json`, trên B2 và khi gửi lên backend để xuất. Kiểu khai báo ở `frontend/src/core/types.ts`, khớp với `backend/app/models.py`. File `.mathpad.json` từ bản cũ vẫn mở được.
+
+API backend: `GET /api/health`, `POST /api/export/tex`, `POST /api/export/pdf`, `POST /api/export/png?dpi=200` (nhiều trang thì trả về zip). Mỗi request tối đa 1 MB và 2.000 dòng, biên dịch tối đa 20 giây, DPI từ 72 đến 600. Dòng toán có lệnh đọc/ghi file hay định nghĩa macro (`\input`, `\write`, `\def`, `\catcode`, `\csname`…) sẽ bị từ chối với lỗi 400, kèm `lineId` của dòng đó.
