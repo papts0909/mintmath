@@ -89,8 +89,8 @@ describe("persistence", () => {
   it("saves and loads", () => {
     const d = newDocument();
     d.title = "t";
-    expect(saveLocal({ doc: d, driveFileId: "f" })).toBe(true);
-    expect(loadLocal()).toEqual({ doc: d, driveFileId: "f" });
+    expect(saveLocal({ doc: d })).toBe(true);
+    expect(loadLocal()).toEqual({ doc: d });
   });
 
   it("returns null on corrupt or missing data", () => {
@@ -109,7 +109,7 @@ describe("persistence", () => {
         throw new Error("quota");
       },
     } as unknown as Storage;
-    expect(saveLocal({ doc: newDocument(), driveFileId: null }, broken)).toBe(false);
+    expect(saveLocal({ doc: newDocument() }, broken)).toBe(false);
     expect(loadLocal(broken)).toBeNull();
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
     expect(() => saveSettings(DEFAULT_SETTINGS, broken)).not.toThrow();

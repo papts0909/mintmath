@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "./components/Editor";
-import LibraryPanel from "./components/LibraryPanel";
+import LibraryPanel, { type LibraryTab } from "./components/LibraryPanel";
+import { saveCurrentToB2, useB2 } from "./cloud/b2Actions";
 import ShortcutPanel from "./components/ShortcutPanel";
 import StatusBar from "./components/StatusBar";
 import Toolbar from "./components/Toolbar";
@@ -15,20 +16,24 @@ import {
   type Settings,
 } from "./core/persistence";
 import { putDoc, requestPersistentStorage } from "./core/library";
-import { saveToDrive, useDriveUi } from "./drive/driveActions";
 import { isNativeApp } from "./native";
 
 let persistAsked = false;
 
 // Restore the last session before the first render.
 const restored = loadLocal();
-if (restored) useDocStore.getState().loadDoc(restored.doc, { driveFileId: restored.driveFileId });
+if (restored) useDocStore.getState().loadDoc(restored.doc);
 
 export default function App() {
   const [savedLocally, setSavedLocally] = useState(true);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryTab, setLibraryTab] = useState<LibraryTab>("local");
+  const openB2 = () => {
+    setLibraryTab("b2");
+    setShowLibrary(true);
+  };
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -36,7 +41,7 @@ export default function App() {
     () =>
       createAutosaver(() => {
         const st = useDocStore.getState();
-        saveLocal({ doc: st.doc, driveFileId: st.driveFileId });
+        saveLocal({ doc: st.doc });
         // Every document also lives in the on-device library.
         putDoc(st.doc)
           .then((stored) => {
@@ -55,7 +60,7 @@ export default function App() {
 
   useEffect(() => {
     const unsub = useDocStore.subscribe((s, prev) => {
-      if (s.doc !== prev.doc || s.driveFileId !== prev.driveFileId) {
+      if (s.doc !== prev.doc) {
         setSavedLocally(false);
         autosaver.schedule();
       }
@@ -83,8 +88,12 @@ export default function App() {
         setShowShortcuts((v) => !v);
       } else if (mod && (e.key === "s" || e.key === "S")) {
         e.preventDefault();
-        if (useDriveUi.getState().signedIn) void saveToDrive();
-        else setToast("Đăng nhập Google để lưu lên Drive (tài liệu vẫn được tự lưu trên máy).");
+        // Save to B2 when connected; otherwise offer to connect.
+        if (useB2.getState().config) void saveCurrentToB2();
+        else {
+          setLibraryTab("b2");
+          setShowLibrary(true);
+        }
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -157,7 +166,11 @@ export default function App() {
         settings={settings}
         onSettings={updateSettings}
         onToggleShortcuts={() => setShowShortcuts((v) => !v)}
-        onToggleLibrary={() => setShowLibrary((v) => !v)}
+        onToggleLibrary={() => {
+          setLibraryTab("local");
+          setShowLibrary((v) => !v);
+        }}
+        onOpenB2={openB2}
         onPreview={(url) => {
           if (previewUrl) URL.revokeObjectURL(previewUrl);
           setPreviewUrl(url);
@@ -167,7 +180,14 @@ export default function App() {
       <TouchBar />
       <main className="workspace">
         <Editor autoSubscript={settings.autoSubscript} imeFix={settings.imeFix} />
-        {showLibrary ? <LibraryPanel onClose={() => setShowLibrary(false)} onMessage={setToast} /> : null}
+        {showLibrary ? (
+          <LibraryPanel
+            onClose={() => setShowLibrary(false)}
+            onMessage={setToast}
+            tab={libraryTab}
+            onTab={setLibraryTab}
+          />
+        ) : null}
         {showShortcuts ? <ShortcutPanel onClose={() => setShowShortcuts(false)} /> : null}
       </main>
       <StatusBar />

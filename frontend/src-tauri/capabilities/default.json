@@ -1,7 +1,22 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Save exported files where the user chooses in the Save dialog.",
+  "description": "Save exported files where the user chooses; talk to Backblaze B2 over native HTTP.",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-save", "fs:allow-write-file"]
+  "permissions": [
+    "core:default",
+    "dialog:allow-save",
+    "fs:allow-write-file",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://*.backblazeb2.com"
+        },
+        {
+          "url": "https://*.backblazeb2.com/*"
+        }
+      ]
+    }
+  ]
 }

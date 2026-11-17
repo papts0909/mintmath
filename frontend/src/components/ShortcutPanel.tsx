@@ -18,7 +18,7 @@ const KEYS: [string, string][] = [
   ["; trong ma trận, hệ", "Sang hàng kế / thêm hàng"],
   ["Tab trong ma trận", "Sang ô kế"],
   ["/  ^  _", "Phân số, mũ, chỉ số dưới"],
-  ["Ctrl+S", "Lưu lên Google Drive"],
+  ["Ctrl+S", "Lưu lên Backblaze B2 (khi đã kết nối)"],
   ["Ctrl+/", "Bật/tắt bảng này"],
 ];
 

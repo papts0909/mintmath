@@ -8,7 +8,7 @@ import {
 } from "../api/exportClient";
 import { useDocStore } from "../core/docStore";
 import { TexLineError } from "../core/texBuilder";
-import { uploadBlobToDrive, useDriveUi } from "../drive/driveActions";
+import { uploadFileToB2, useB2 } from "../cloud/b2Actions";
 import { exportTexLocal, pdfLocal, pngLocal, printDoc } from "../export/localExport";
 import { isNativeApp } from "../native";
 
@@ -27,7 +27,7 @@ const OFFLINE_PDF_HINT =
 export default function ExportMenu({ onPreview }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>(null);
-  const signedIn = useDriveUi((s) => s.signedIn);
+  const b2Connected = useB2((s) => s.config !== null);
   const doc = () => useDocStore.getState().doc;
 
   const run = async (label: string, fn: () => Promise<Status | void>) => {
@@ -121,17 +121,24 @@ export default function ExportMenu({ onPreview }: Props) {
       ),
     );
 
-  const pdfToDrive = () =>
-    run("PDF lên Drive", async () => {
+  /** Upload the .tex and a PDF of the open document to B2. The PDF comes from
+   *  the export server when there is one, otherwise it is built on the device. */
+  const exportToB2 = () =>
+    run("lên B2", async () => {
+      const tex = exportTexLocal(doc());
+      let pdf: { blob: Blob; filename: string };
       try {
-        const { blob, filename } = await exportDoc("pdf", doc());
-        await uploadBlobToDrive(blob, filename);
+        if (!SERVER_ENABLED) throw new ExportError("no server", 0, null, true);
+        pdf = await exportDoc("pdf", doc());
       } catch (e) {
-        if (isServerUnavailable(e)) {
-          return { kind: "error", text: "Cần máy chủ xuất PDF để lưu PDF lên Drive (đang ngoại tuyến?)." };
-        }
-        throw e;
+        if (!isServerUnavailable(e)) throw e;
+        pdf = await pdfLocal(doc());
       }
+      const okTex = await uploadFileToB2(tex.blob, tex.filename);
+      const okPdf = okTex && (await uploadFileToB2(pdf.blob, pdf.filename));
+      return okPdf
+        ? { kind: "info", text: `Đã lưu ${tex.filename} và ${pdf.filename} lên B2.` }
+        : { kind: "error", text: useB2.getState().message?.text ?? "Không lưu được lên B2." };
     });
 
   return (
@@ -166,9 +173,14 @@ export default function ExportMenu({ onPreview }: Props) {
           </button>
         </>
       )}
-      {signedIn && SERVER_ENABLED ? (
-        <button type="button" disabled={busy !== null} onClick={() => void pdfToDrive()}>
-          Lưu PDF lên Drive
+      {b2Connected ? (
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={() => void exportToB2()}
+          title="Lưu bản .tex và PDF của bài đang mở lên Backblaze B2"
+        >
+          ⬆ B2
         </button>
       ) : null}
       {status ? (

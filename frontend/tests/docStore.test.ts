@@ -153,15 +153,13 @@ describe("docStore", () => {
       updatedAt: "2026-01-01T00:00:00Z",
       lines: [{ id: "x", type: "text", content: "hi" }],
     };
-    s().loadDoc(doc, { driveFileId: "f1" });
+    s().loadDoc(doc);
     expect(s().doc.id).toBe("d1");
-    expect(s().driveFileId).toBe("f1");
     expect(s().dirty).toBe(false);
     expect(s().past).toHaveLength(0);
     s().newDoc();
     expect(s().doc.title).toBe("");
     expect(s().doc.lines).toHaveLength(1);
-    expect(s().driveFileId).toBeNull();
   });
 
   it("loadDoc of an empty doc yields one line", () => {
@@ -177,12 +175,6 @@ describe("docStore", () => {
     expect(s().focusRelative(b, 1)).toBe(false);
     expect(s().focusRelative(b, -1)).toBe(true);
     expect(s().focusEdge).toBe("end");
-  });
-
-  it("markDriveSaved clears dirty", () => {
-    s().updateLine(ids()[0], "q");
-    s().markDriveSaved();
-    expect(s().dirty).toBe(false);
   });
 });
 

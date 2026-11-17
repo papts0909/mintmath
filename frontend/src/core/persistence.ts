@@ -6,7 +6,6 @@ export const AUTOSAVE_DELAY_MS = 500;
 
 export interface StoredState {
   doc: Doc;
-  driveFileId: string | null;
 }
 
 export function saveLocal(state: StoredState, storage: Storage = localStorage): boolean {
@@ -22,10 +21,9 @@ export function loadLocal(storage: Storage = localStorage): StoredState | null {
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw) as { doc?: unknown; driveFileId?: unknown };
+    const data = JSON.parse(raw) as { doc?: unknown };
     const doc = parseDoc(data.doc);
-    const driveFileId = typeof data.driveFileId === "string" ? data.driveFileId : null;
-    return { doc, driveFileId };
+    return { doc };
   } catch {
     return null;
   }

@@ -38,9 +38,6 @@ jobs:
           # Without an export server, PDF/PNG are produced on the device.
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
           VITE_EXPORT_SERVER: ${{ vars.VITE_API_BASE && 'on' || 'off' }}
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
-          VITE_GOOGLE_API_KEY: ${{ vars.VITE_GOOGLE_API_KEY }}
-          VITE_GOOGLE_APP_ID: ${{ vars.VITE_GOOGLE_APP_ID }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist

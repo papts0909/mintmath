@@ -12,7 +12,7 @@ export default function InstallBar() {
       {!online ? (
         <span
           className="badge offline"
-          title="Vẫn soạn và xuất LaTeX/In/PNG được; Drive và PDF máy chủ cần mạng"
+          title="Vẫn soạn và xuất LaTeX/In/PNG được; B2 và PDF máy chủ cần mạng"
         >
           Ngoại tuyến
         </span>

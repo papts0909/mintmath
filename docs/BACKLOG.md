@@ -17,14 +17,14 @@
 ## Thiết bị
 
 - Thử trên iPhone/iPad và Android thật: bàn phím toán ảo, cài lên màn hình chính, chạy offline. E2E mới giả lập Pixel 7 trên Chromium.
-- Nếu sau này cần đưa lên store: dùng Capacitor bọc chính frontend này (đăng nhập Google phải chuyển sang plugin native).
+- Nếu sau này cần đưa lên store: dùng Capacitor bọc chính frontend này.
 - Nếu cần PDF chuẩn LaTeX mà không có máy chủ trên desktop: dùng Tauri kèm Tectonic.
 
-## Xuất và Drive
+## Xuất và B2
 
 - Chọn DPI cho PNG ngay trên giao diện.
-- Liệt kê file gần đây trên Drive mà không cần mở Picker.
-- Tự lưu lên Drive định kỳ khi đã gắn file.
+- Tự đồng bộ với B2 định kỳ hoặc khi mở app.
+- Lưu khóa B2 vào kho bảo mật của hệ điều hành (Keychain, Android Keystore) thay vì bộ nhớ của app.
 
 ## Phase 6 (chờ duyệt)
 
