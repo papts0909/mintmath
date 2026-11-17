@@ -1,6 +1,6 @@
-// Import a LaTeX file into a MathPad document.
+// Import a LaTeX file into a MintMath document.
 //
-// Round-trips MathPad's own .tex export exactly (title, text lines, display
+// Round-trips MintMath's own .tex export exactly (title, text lines, display
 // math, joined align* rows, empty text lines) and reads common hand-written
 // LaTeX: \section/\title, paragraphs, \[ \], $$ $$, equation/align/gather/
 // multline (rows become joined lines), itemize/enumerate, simple text macros.
@@ -84,7 +84,7 @@ function readArg(s: string, i: number): [string, number] | null {
   return [s.slice(k + 1, end), end + 1];
 }
 
-/** Undo MathPad's text escaping and drop simple formatting macros. */
+/** Undo MintMath's text escaping and drop simple formatting macros. */
 export function unescapeText(s: string): string {
   let out = s
     .replace(/\\textbackslash\{\}/g, "\uE000")
@@ -157,7 +157,7 @@ function hasTopLevelAmp(s: string): boolean {
 }
 
 function mathRows(rows: string[]): NewLine[] {
-  // MathPad's export prefixes rows that have no alignment of their own with
+  // MintMath's export prefixes rows that have no alignment of their own with
   // "& " (ampersand + space). Hand-written align blocks put & mid-row
   // ("a &= b"); then leading ampersands are real alignment and are kept.
   const handAligned = rows.some((r) => hasTopLevelAmp(r.trim().replace(/^&\s*/, "")));
@@ -306,7 +306,7 @@ export function importTex(source: string): TexImportResult {
       }
     }
 
-    // Vertical space: MathPad writes \medskip for an empty text line.
+    // Vertical space: MintMath writes \medskip for an empty text line.
     const skip = /^\\(medskip|bigskip|smallskip|null|newpage|clearpage|noindent|par)\b\s*/.exec(rest);
     if (skip) {
       flushPar();

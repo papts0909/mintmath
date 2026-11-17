@@ -8,10 +8,51 @@ import type { Plugin } from "vite";
 // Serve the CORS setup scripts at <app>/b2-cors.sh and <app>/b2-cors.ps1: the
 // app shows commands that download them from the app itself.
 const CORS_SCRIPTS = ["b2-cors.sh", "b2-cors.ps1"];
+// Content-Security-Policy (meta tag; GitHub Pages cannot set headers). The page
+// may only load its own code and only talk to itself, Backblaze B2 and the
+// desktop app's IPC, so injected content cannot load scripts or send data
+// (e.g. the stored B2 key) anywhere else.
+function contentSecurityPolicy(): Plugin {
+  const apiBase = process.env.VITE_API_BASE;
+  return {
+    name: "mintmath-csp",
+    transformIndexHtml: {
+      order: "post",
+      handler(html, ctx) {
+        const dev = Boolean(ctx.server);
+        const csp = [
+          "default-src 'self'",
+          // Dev only: Vite's inline React refresh preamble.
+          `script-src 'self'${dev ? " 'unsafe-inline'" : ""}`,
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "font-src 'self' data:",
+          "media-src 'self' data: blob:",
+          "worker-src 'self' blob:",
+          [
+            "connect-src 'self' data: blob: https://*.backblazeb2.com ipc: http://ipc.localhost",
+            apiBase ? new URL(apiBase).origin : "",
+            dev ? "ws: wss:" : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; ");
+        return html.replace(
+          "<head>",
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />`,
+        );
+      },
+    },
+  };
+}
+
 function serveCorsScript(): Plugin {
   const src = (name: string) => new URL(`./scripts/${name}`, import.meta.url);
   return {
-    name: "mathpad-b2-cors-script",
+    name: "mintmath-b2-cors-script",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const name = CORS_SCRIPTS.find((n) => req.url?.split("?")[0] === `${server.config.base}${n}`);
@@ -36,12 +77,13 @@ export default defineConfig({
   plugins: [
     react(),
     serveCorsScript(),
+    contentSecurityPolicy(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false, // registered in src/pwa.ts
       manifest: {
-        name: "MathPad – Trình bày bài giải toán",
-        short_name: "MathPad",
+        name: "MintMath – Trình bày bài giải toán",
+        short_name: "MintMath",
         description: "Gõ bài giải toán theo từng dòng, xuất LaTeX, PDF, PNG.",
         lang: "vi",
         start_url: ".",

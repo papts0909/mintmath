@@ -67,7 +67,7 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
   await page.keyboard.press("Control+s");
   await expect.poll(() => docKeys(bucket)).toHaveLength(1);
   const [key1] = docKeys(bucket);
-  expect(key1).toMatch(/^mathpad\/Bai-1__.+\.mathpad\.json$/);
+  expect(key1).toMatch(/^mintmath\/Bai-1__.+\.mintmath\.json$/);
   expect(JSON.parse(textOf(bucket, key1)).lines[0].content).toBe("x^2");
   await expect(page.getByText(/Đã lưu lên B2 lúc/).first()).toBeVisible();
 
@@ -95,12 +95,12 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
   await other.keyboard.press("End");
   await other.keyboard.type("+1");
   await expect.poll(async () => (await readLines(other))[0].content).toBe("x^2+1");
-  await other.getByRole("button", { name: /☁ mathpad-test/ }).click();
+  await other.getByRole("button", { name: /☁ mintmath-test/ }).click();
   await panel(other).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
   await expect(panel(other).getByText(/Đồng bộ xong: 1 bài lên B2/)).toBeVisible();
 
   // First device syncs and receives the edit.
-  await page.getByRole("button", { name: /☁ mathpad-test/ }).click();
+  await page.getByRole("button", { name: /☁ mintmath-test/ }).click();
   await panel(page).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
   await expect(panel(page).getByText(/1 bài về máy/)).toBeVisible();
   await expect.poll(async () => (await readLines(page))[0].content).toBe("x^2+1");
@@ -136,7 +136,7 @@ test("edits on both devices keep both versions", async ({ page, browser }) => {
   await page.keyboard.press("End");
   await page.keyboard.type("c");
   await expect.poll(async () => (await readLines(page))[0].content).toBe("ac");
-  await page.getByRole("button", { name: /☁ mathpad-test/ }).click();
+  await page.getByRole("button", { name: /☁ mintmath-test/ }).click();
   await panel(page).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
   await expect(panel(page).getByText(/sửa ở cả hai nơi/)).toBeVisible();
   await panel(page).getByRole("tab", { name: "💻 Trên máy" }).click();
@@ -173,12 +173,12 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
   await page.getByRole("button", { name: "⬆ B2" }).click();
   await expect
     .poll(() => [...bucket.keys()].sort())
-    .toEqual(expect.arrayContaining(["mathpad/de-thi.tex", "mathpad/Đề_thi.tex", "mathpad/Đề_thi.pdf"]));
-  expect(bucket.get("mathpad/Đề_thi.pdf")!.body.subarray(0, 5).toString()).toBe("%PDF-");
+    .toEqual(expect.arrayContaining(["mintmath/de-thi.tex", "mintmath/Đề_thi.tex", "mintmath/Đề_thi.pdf"]));
+  expect(bucket.get("mintmath/Đề_thi.pdf")!.body.subarray(0, 5).toString()).toBe("%PDF-");
 
   page.once("dialog", (d) => void d.accept());
   await panel(page).getByRole("button", { name: "Xóa de-thi.tex trên B2" }).click();
-  await expect.poll(() => bucket.has("mathpad/de-thi.tex")).toBe(false);
+  await expect.poll(() => bucket.has("mintmath/de-thi.tex")).toBe(false);
 
   page.once("dialog", (d) => void d.accept());
   await panel(page).getByRole("button", { name: "Ngắt kết nối B2" }).click();
@@ -222,7 +222,7 @@ test("missing CORS rule: the app shows a ready-to-copy command, then connects", 
   await help.getByRole("tab", { name: "Windows" }).click();
   await expect(help.locator("code").filter({ hasText: "b2-cors.ps1" })).toHaveText(
     "$s=(iwr -UseBasicParsing http://localhost:5173/b2-cors.ps1).RawContentStream.ToArray(); " +
-      "& ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($s))) -Bucket mathpad-test -Origin http://localhost:5173",
+      "& ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($s))) -Bucket mintmath-test -Origin http://localhost:5173",
   );
 
   // The scripts are served by the app itself.

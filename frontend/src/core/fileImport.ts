@@ -1,4 +1,4 @@
-// Open a file chosen by the user: MathPad document, LaTeX, or library backup.
+// Open a file chosen by the user: MintMath document, LaTeX, or library backup.
 import { DocFormatError, parseDoc } from "./docFormat";
 import { importBackup, isBackup } from "./library";
 import { importTex } from "./texImport";
@@ -6,7 +6,8 @@ import type { Doc } from "./types";
 
 export type ImportOutcome = { kind: "doc"; doc: Doc; message: string } | { kind: "backup"; message: string };
 
-export const ACCEPTED_FILES = ".mathpad.json,.json,.tex,.ltx,application/json,text/x-tex,application/x-tex";
+export const ACCEPTED_FILES =
+  ".mintmath.json,.mathpad.json,.json,.tex,.ltx,application/json,text/x-tex,application/x-tex";
 
 export async function importFile(file: File): Promise<ImportOutcome> {
   const text = await file.text();

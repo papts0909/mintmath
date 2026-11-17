@@ -107,7 +107,7 @@ test("backup and restore the whole library", async ({ page, browser }) => {
     library(page).getByRole("button", { name: "Sao lưu", exact: true }).click(),
   ]);
   const backup = JSON.parse(readFileSync((await dl.path())!, "utf-8"));
-  expect(backup.type).toBe("mathpad-library");
+  expect(backup.type).toBe("mintmath-library");
   expect(backup.docs).toHaveLength(1);
 
   const other = await (await browser.newContext()).newPage();

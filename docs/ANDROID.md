@@ -1,12 +1,12 @@
 # App Android (APK)
 
-App Android là chính bản web MathPad, đóng gói bằng [Capacitor](https://capacitorjs.com). Thư mục `frontend/android/` chứa project Android.
+App Android là chính bản web MintMath, đóng gói bằng [Capacitor](https://capacitorjs.com). Thư mục `frontend/android/` chứa project Android.
 
 ## Lấy file APK
 
 **Cách 1: từ GitHub Actions** (không cần cài gì)
 1. Mỗi lần có code mới trong `frontend/`, workflow **Android APK** tự build. Muốn build lại bằng tay: Actions → Android APK → Run workflow.
-2. Mở lần chạy mới nhất, kéo xuống mục **Artifacts**, tải `MathPad-apk-<số>`. Đây là file zip chứa `MathPad-<số>.apk`.
+2. Mở lần chạy mới nhất, kéo xuống mục **Artifacts**, tải `MintMath-apk-<số>`. Đây là file zip chứa `MintMath-<số>.apk`.
 3. Muốn có link tải cố định cho bạn bè: tạo tag, ví dụ `git tag v1.0.0 && git push origin v1.0.0`. Workflow sẽ đưa APK lên mục **Releases** của repo.
 
 **Cách 2: tự build trên máy** (cần Android Studio hoặc Android SDK, và JDK 21)

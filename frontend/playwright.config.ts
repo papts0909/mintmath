@@ -19,7 +19,7 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: ["**/mobile.spec.ts", "**/pwa.spec.ts"],
+      testIgnore: ["**/mobile.spec.ts", "**/pwa.spec.ts", "**/csp.spec.ts"],
     },
     // Touch phone layout (Chromium with Pixel 7 metrics, touch and coarse pointer).
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: "**/mobile.spec.ts" },
@@ -27,7 +27,7 @@ export default defineConfig({
     {
       name: "pwa",
       use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4173" },
-      testMatch: "**/pwa.spec.ts",
+      testMatch: ["**/pwa.spec.ts", "**/csp.spec.ts"],
     },
   ],
   webServer: [

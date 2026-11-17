@@ -11,7 +11,7 @@ MAX_BODY_BYTES = 1_000_000
 
 logging.basicConfig(level=os.environ.get("MATHPAD_LOG_LEVEL", "INFO"))
 
-app = FastAPI(title="MathPad export API", version="0.1.0")
+app = FastAPI(title="MintMath export API", version="0.1.0")
 
 _origins = [o.strip() for o in os.environ.get("MATHPAD_CORS_ORIGINS", "").split(",") if o.strip()]
 if _origins:

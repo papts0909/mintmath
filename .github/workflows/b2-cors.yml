@@ -1,4 +1,4 @@
-# Set the CORS rule a Backblaze B2 bucket needs for the MathPad web app / PWA.
+# Set the CORS rule a Backblaze B2 bucket needs for the MintMath web app / PWA.
 # Runs only when started by hand: Actions → "Set B2 CORS" → Run workflow.
 #
 # One-time setup (Settings → Secrets and variables → Actions → New repository secret):
@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       origins:
-        description: "Địa chỉ web của MathPad (cách nhau bằng dấu cách)"
+        description: "Địa chỉ web của MintMath (cách nhau bằng dấu cách)"
         required: true
         default: "https://monglinhnguyendat.id.vn https://papts0909.github.io"
         type: string

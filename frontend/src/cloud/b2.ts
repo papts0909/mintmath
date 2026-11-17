@@ -1,5 +1,5 @@
 // Backblaze B2 through its S3-compatible API. Each user connects their own
-// account with an application key; nothing is stored on any MathPad server.
+// account with an application key; nothing is stored on any MintMath server.
 import { AwsClient } from "aws4fetch";
 
 export interface B2Config {
@@ -10,7 +10,7 @@ export interface B2Config {
   bucket: string;
   /** S3 endpoint shown on the bucket page, e.g. s3.us-west-004.backblazeb2.com */
   endpoint: string;
-  /** Folder inside the bucket used by MathPad, ending with "/". */
+  /** Folder inside the bucket used by MintMath, ending with "/". */
   prefix: string;
 }
 
@@ -34,7 +34,7 @@ export class B2Error extends Error {
   }
 }
 
-export const DEFAULT_PREFIX = "mathpad/";
+export const DEFAULT_PREFIX = "mintmath/";
 
 /** "https://s3.us-west-004.backblazeb2.com/" -> host + region, or null if invalid. */
 export function parseEndpoint(input: string): { host: string; region: string } | null {
@@ -56,6 +56,10 @@ export function normalizePrefix(prefix: string): string {
 export function validateConfig(cfg: B2Config): string | null {
   if (!cfg.keyId.trim()) return "Thiếu keyID.";
   if (!cfg.appKey.trim()) return "Thiếu applicationKey.";
+  // A Master Application Key's keyID is the 12-hex-digit account ID. It can
+  // change and delete everything in the account, so it is never stored here.
+  if (/^[0-9a-f]{12}$/i.test(cfg.keyId.trim()))
+    return "Đây là Master Application Key — không dùng để kết nối. Tạo khóa riêng (Application Keys → Add a New Application Key, chỉ cho bucket này, quyền Read and Write).";
   if (!/^[a-z0-9][a-z0-9-]{4,48}[a-z0-9]$/i.test(cfg.bucket.trim())) return "Tên bucket không hợp lệ.";
   if (!parseEndpoint(cfg.endpoint))
     return "Endpoint phải có dạng s3.<vùng>.backblazeb2.com (xem trang chi tiết bucket).";
@@ -128,7 +132,7 @@ export function createB2Client(cfg: B2Config, fetchImpl: FetchLike) {
   return {
     prefix: normalizePrefix(cfg.prefix),
 
-    /** All objects under the MathPad prefix. */
+    /** All objects under the MintMath prefix. */
     async list(): Promise<RemoteObject[]> {
       const out: RemoteObject[] = [];
       let token: string | null = null;

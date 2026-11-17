@@ -81,7 +81,7 @@ export default function MathLine(props: Props) {
   useEffect(() => {
     const mf = ref.current;
     if (!mf) return;
-    // On touch screens show MathLive's on-screen keyboard (with the MathPad layout).
+    // On touch screens show MathLive's on-screen keyboard (with the MintMath layout).
     setupVirtualKeyboard();
     mf.mathVirtualKeyboardPolicy = isCoarsePointer() ? "auto" : "manual";
     mf.inlineShortcuts = { ...mf.inlineShortcuts, ...SHORTCUTS };

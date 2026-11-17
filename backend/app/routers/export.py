@@ -27,13 +27,13 @@ def file_stem(title: str) -> str:
     stem = unicodedata.normalize("NFC", title).strip()
     stem = re.sub(r"[\\/:*?\"<>|\x00-\x1f]+", "", stem)
     stem = re.sub(r"\s+", "_", stem)[:80]
-    return stem or "mathpad"
+    return stem or "mintmath"
 
 
 def _ascii_stem(stem: str) -> str:
     s = unicodedata.normalize("NFKD", stem.replace("đ", "d").replace("Đ", "D"))
     s = s.encode("ascii", "ignore").decode()
-    return re.sub(r"[^A-Za-z0-9_.-]", "", s) or "mathpad"
+    return re.sub(r"[^A-Za-z0-9_.-]", "", s) or "mintmath"
 
 
 def _disposition(filename: str) -> str:

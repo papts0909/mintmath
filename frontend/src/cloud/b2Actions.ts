@@ -17,7 +17,7 @@ import {
   type B2Config,
   type RemoteObject,
 } from "./b2";
-import { DOC_SUFFIX, docIdFromKey, docKey, planSync, type SyncState } from "./b2Sync";
+import { docIdFromKey, isDocKey, docKey, planSync, type SyncState } from "./b2Sync";
 
 const CONFIG_KEY = "mathpad.b2.v1";
 const SYNC_KEY = "mathpad.b2.sync.v1";
@@ -259,7 +259,7 @@ export async function saveCurrentToB2(): Promise<boolean> {
   return result === true;
 }
 
-/** Upload any file (e.g. an export) into the MathPad folder. */
+/** Upload any file (e.g. an export) into the MintMath folder. */
 export async function uploadFileToB2(blob: Blob, name: string): Promise<boolean> {
   const result = await run("Đang tải tệp lên…", async (c) => {
     await c.put(`${c.prefix}${name}`, blob, blob.type || "application/octet-stream");
@@ -270,11 +270,11 @@ export async function uploadFileToB2(blob: Blob, name: string): Promise<boolean>
   return result === true;
 }
 
-/** Open a remote file: MathPad documents and .tex files become the open document. */
+/** Open a remote file: MintMath documents and .tex files become the open document. */
 export async function openFromB2(key: string): Promise<Doc | null> {
   const doc = await run("Đang mở…", async (c) => {
     const text = await c.getText(key);
-    if (key.endsWith(DOC_SUFFIX)) {
+    if (isDocKey(key)) {
       const d = parseDocText(text);
       const state = loadSyncState();
       const r = useB2.getState().files?.find((f) => f.key === key);
@@ -291,7 +291,7 @@ export async function openFromB2(key: string): Promise<Doc | null> {
           .replace(/\.(tex|ltx)$/i, "");
       return d;
     }
-    throw new DocFormatError("Chỉ mở được .mathpad.json hoặc .tex; tệp khác hãy dùng “Tải về”.");
+    throw new DocFormatError("Chỉ mở được .mintmath.json hoặc .tex; tệp khác hãy dùng “Tải về”.");
   });
   if (!doc) return null;
   await putDoc(doc).catch(() => false);

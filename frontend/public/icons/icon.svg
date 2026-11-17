@@ -1,10 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#1e6fd9"/>
-  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M128 150 h-28 v212 h28"/>
-    <path d="M384 150 h28 v212 h-28"/>
-    <path d="M300 160 v192"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="96" fill="#FFFFFF"/>
+<g transform="translate(40.96000000000001 40.96000000000001) scale(2.1504)" style="color:#111111">
+  <circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="62" y="52" width="11" height="96" fill="currentColor"/>
+  <rect x="127" y="52" width="11" height="96" fill="currentColor"/>
+  <g stroke="currentColor" fill="none">
+    <line x1="67.5" y1="52" x2="100" y2="112" stroke-width="2.6"/>
+    <line x1="100" y1="112" x2="132.5" y2="52" stroke-width="2.6"/>
+    <line x1="56" y1="52" x2="79" y2="52" stroke-width="1.6"/>
+    <line x1="121" y1="52" x2="144" y2="52" stroke-width="1.6"/>
+    <line x1="56" y1="148" x2="79" y2="148" stroke-width="1.6"/>
+    <line x1="121" y1="148" x2="144" y2="148" stroke-width="1.6"/>
   </g>
-  <text x="206" y="300" font-family="Georgia, 'DejaVu Serif', serif" font-size="150" font-style="italic" fill="#ffffff" text-anchor="middle">x</text>
-  <text x="352" y="300" font-family="Georgia, 'DejaVu Serif', serif" font-size="120" fill="#ffffff" text-anchor="middle">b</text>
-</svg>
+</g></svg>

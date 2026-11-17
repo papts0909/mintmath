@@ -103,7 +103,7 @@ test("keyboard table works without the mouse", async ({ page }) => {
   expect(await focusedIndex(page)).toBe(2);
 });
 
-test("download and reopen a .mathpad.json file", async ({ page }) => {
+test("download and reopen a .mintmath.json file", async ({ page }) => {
   // ASCII title: headless Chromium reports non-ASCII download names as "download".
   await page.locator(".title-input").fill("Bai kiem tra");
   await page.locator("math-field").first().click();
@@ -117,7 +117,7 @@ test("download and reopen a .mathpad.json file", async ({ page }) => {
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Tải về" }).click(),
   ]);
-  expect(download.suggestedFilename()).toBe("Bai_kiem_tra.mathpad.json");
+  expect(download.suggestedFilename()).toBe("Bai_kiem_tra.mintmath.json");
   const path = await download.path();
 
   page.once("dialog", (d) => void d.accept());
@@ -135,7 +135,7 @@ test("rejects a file from a newer version", async ({ page }) => {
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify({ version: 9, lines: [] })),
   });
-  await expect(page.locator(".toast")).toContainText("phiên bản MathPad mới hơn");
+  await expect(page.locator(".toast")).toContainText("phiên bản MintMath mới hơn");
 });
 
 test("undo/redo of line operations and Ctrl+D", async ({ page }) => {

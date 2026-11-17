@@ -65,7 +65,7 @@ Yêu cầu: chạy trên máy tính, Android, iOS/iPadOS, dùng cá nhân và ch
   - Máy chủ chỉ còn là tùy chọn. Khi máy chủ không trả lời (mất mạng, host tĩnh trả 404/405, proxy trả 5xx không phải JSON), nút PDF/PNG tự chuyển sang xuất tại máy.
 - **Ma trận bổ sung khi hiển thị:** MathLive vẽ `\left[ array \right]` với một khoảng trống lớn phía trên ma trận. Editor và bản in hiển thị dạng `\begin{bmatrix}\begin{array}{…|…}…\end{array}\end{bmatrix}` (không có khoảng trống, vẫn sửa được từng ô). Dữ liệu lưu và xuất vẫn là dạng chuẩn. Chuyển đổi nằm ở `src/core/displayLatex.ts`.
 - **Màn cảm ứng** (`pointer: coarse`):
-  - Bật bàn phím toán ảo của MathLive, có thêm layout "MathPad" với ký hiệu và cấu trúc.
+  - Bật bàn phím toán ảo của MathLive, có thêm layout "MintMath" với ký hiệu và cấu trúc.
   - Thanh nút thao tác dòng ghim trên cùng (nút không cướp focus).
   - Nội dung chừa chỗ cho bàn phím ảo (`--vk-height`).
   - Trên màn hẹp, thanh công cụ cuộn theo trang.
@@ -74,12 +74,24 @@ Yêu cầu: chạy trên máy tính, Android, iOS/iPadOS, dùng cá nhân và ch
 
 ## Lưu trữ đám mây: Backblaze B2 thay cho Google Drive
 
-- Mỗi người dùng **tự tạo tài khoản B2** và nhập keyID, applicationKey, bucket, endpoint trong app. Không có máy chủ MathPad giữ khóa hay dữ liệu.
+- Mỗi người dùng **tự tạo tài khoản B2** và nhập keyID, applicationKey, bucket, endpoint trong app. Không có máy chủ MintMath giữ khóa hay dữ liệu.
 - Gọi API tương thích S3 (ListObjectsV2/Get/Put/Delete), ký SigV4 bằng `aws4fetch`. Code ở `frontend/src/cloud/`.
 - Ba nền tảng cùng một code:
   - Bản web/PWA dùng `fetch` (bucket cần quy tắc CORS).
   - Desktop dùng `@tauri-apps/plugin-http`, chỉ được phép gọi `https://*.backblazeb2.com`.
   - Android dùng `CapacitorHttp` (patch `fetch` bằng HTTP native).
-- Tên tệp: `mathpad/<tiêu-đề-không-dấu>__<id>.mathpad.json`. id giữ khóa ổn định giữa các máy; phần tiêu đề để dễ đọc khi duyệt bucket. Đổi tiêu đề thì tệp cũ được thay.
+- Tên tệp: `mintmath/<tiêu-đề-không-dấu>__<id>.mintmath.json`. id giữ khóa ổn định giữa các máy; phần tiêu đề để dễ đọc khi duyệt bucket. Đổi tiêu đề thì tệp cũ được thay.
 - Đồng bộ hai chiều dựa trên ETag và `updatedAt` đã ghi nhớ ở lần đồng bộ trước (`planSync`, hàm thuần, có test). Không bao giờ xóa; sửa ở cả hai nơi thì giữ cả hai bản ("… (bản trên B2)").
 - Khóa lưu trong bộ nhớ cục bộ của app/trình duyệt trên từng máy. Nên dùng application key chỉ có quyền trên một bucket. Lưu khóa vào kho bảo mật của hệ điều hành ghi ở BACKLOG.
+
+## Tên app: MintMath
+
+Mọi chỗ người dùng nhìn thấy (giao diện, manifest, cửa sổ desktop, tên app Android, tên tệp) dùng tên **MintMath**. Logo nằm ở `frontend/brand/mark.svg` (lấy từ bản thiết kế "MintMath Logo"). Mọi icon đều tạo lại từ logo này bằng `node scripts/make-icons.mjs`.
+
+Một số định danh nội bộ vẫn giữ tên cũ để không làm mất dữ liệu đã có:
+- khóa lưu trữ `mathpad.*` và cơ sở dữ liệu IndexedDB `mathpad`;
+- mã định danh app `app.mathpad.editor` trên Android và desktop (đổi mã này thì máy sẽ coi là app khác: phải cài lại, và mất dữ liệu đang có);
+- biến môi trường `MATHPAD_*` của backend;
+- tên khóa ký APK.
+
+Tệp kiểu cũ vẫn mở được: `.mathpad.json`, bản sao lưu `mathpad-library`, bài trên B2 dạng `….mathpad.json`, và quy tắc CORS `mathpad-web` (được thay bằng `mintmath-web`).

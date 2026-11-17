@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mathpadRule, mergeRules, parseOrigins, setMathpadCors, RULE_NAME } from "../scripts/b2-cors.mjs";
+import { mintmathRule, mergeRules, parseOrigins, setMintmathCors, RULE_NAME } from "../scripts/b2-cors.mjs";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
@@ -17,7 +17,7 @@ describe("scripts/b2-cors.mjs", () => {
   it("keeps other rules and the origins its own rule already allowed", () => {
     const other = { corsRuleName: "other", allowedOrigins: ["*"] };
     const old = { corsRuleName: RULE_NAME, allowedOrigins: ["https://old", "https://new"] };
-    const rule = mathpadRule(["https://new"]);
+    const rule = mintmathRule(["https://new"]);
     expect(mergeRules([other, old], rule)).toEqual([
       other,
       { ...rule, allowedOrigins: ["https://old", "https://new"] },
@@ -36,13 +36,13 @@ describe("scripts/b2-cors.mjs", () => {
         apiInfo: { storageApi: { apiUrl: "https://api004.b2" } },
       }),
       json({ buckets: [{ bucketId: "bid", corsRules: [{ corsRuleName: "keep" }] }] }),
-      json({ corsRules: [{ corsRuleName: "keep" }, mathpadRule(["https://x.vn"])] }),
+      json({ corsRules: [{ corsRuleName: "keep" }, mintmathRule(["https://x.vn"])] }),
     ];
     const f = vi.fn(async (url: string, init: RequestInit = {}) => {
       calls.push({ url, init });
       return replies[calls.length - 1];
     });
-    const rules = await setMathpadCors(
+    const rules = await setMintmathCors(
       { keyId: "k", appKey: "s", bucketName: "bkt", origins: ["https://x.vn"] },
       f,
     );
@@ -69,7 +69,7 @@ describe("scripts/b2-cors.mjs", () => {
         : json({ code: "unauthorized", message: "not entitled" }, 401),
     );
     await expect(
-      setMathpadCors({ keyId: "k", appKey: "s", bucketName: "b", origins: [] }, f),
+      setMintmathCors({ keyId: "k", appKey: "s", bucketName: "b", origins: [] }, f),
     ).rejects.toThrow(/Tìm bucket thất bại.*Master Application Key/);
   });
 
@@ -80,7 +80,7 @@ describe("scripts/b2-cors.mjs", () => {
         : json({ buckets: [] }),
     );
     await expect(
-      setMathpadCors({ keyId: "k", appKey: "s", bucketName: "nope", origins: [] }, f),
+      setMintmathCors({ keyId: "k", appKey: "s", bucketName: "nope", origins: [] }, f),
     ).rejects.toThrow(/Không tìm thấy bucket "nope"/);
   });
 });
@@ -105,5 +105,14 @@ describe("parseArgs", () => {
       bucketName: "b",
       origins: ["https://x.vn", "http://localhost:1"],
     });
+  });
+});
+
+describe("rename", () => {
+  it("replaces the old MathPad rule and keeps its origins", () => {
+    const old = { corsRuleName: "mathpad-web", allowedOrigins: ["https://old"] };
+    const rule = mintmathRule(["https://new"]);
+    expect(RULE_NAME).toBe("mintmath-web");
+    expect(mergeRules([old], rule)).toEqual([{ ...rule, allowedOrigins: ["https://old", "https://new"] }]);
   });
 });

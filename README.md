@@ -1,12 +1,12 @@
-# MathPad (mintmath)
+# MintMath (mintmath)
 
-MathPad là ứng dụng web để trình bày bài giải toán theo từng dòng, gõ hoàn toàn bằng bàn phím. Mỗi dòng là một dòng toán (MathLive) hoặc một dòng chữ tiếng Việt có dấu. Bài làm xuất được ra `.tex`, PDF, PNG, và lưu được lên tài khoản Backblaze B2 của chính người dùng.
+MintMath là ứng dụng web để trình bày bài giải toán theo từng dòng, gõ hoàn toàn bằng bàn phím. Mỗi dòng là một dòng toán (MathLive) hoặc một dòng chữ tiếng Việt có dấu. Bài làm xuất được ra `.tex`, PDF, PNG, và lưu được lên tài khoản Backblaze B2 của chính người dùng.
 
 - **Frontend:** React, Vite, TypeScript (strict), Zustand, MathLive. Thư mục `frontend/`.
 - **Backend:** FastAPI, chỉ lo việc xuất file: LaTeX → PDF bằng Tectonic hoặc XeLaTeX, PDF → PNG bằng `pdftoppm`. Thư mục `backend/`.
 - **Dữ liệu:** nằm trên thiết bị (Thư viện, IndexedDB) và, nếu người dùng kết nối, trong bucket Backblaze B2 của họ. Backend không có cơ sở dữ liệu và không giữ khóa.
 
-MathPad là **PWA**: cài được như ứng dụng lên máy tính (Chrome/Edge), Android, iPhone và iPad, và chạy offline. Soạn bài, lưu trên máy, xuất `.tex`, In/Lưu PDF và xuất PNG đều chạy ngay trên thiết bị. Máy chủ xuất file là **tùy chọn**: khi có, nút PDF/PNG cho bản dàn trang LaTeX chuẩn; khi không có hoặc mất mạng, app tự dùng bản xuất tại máy.
+MintMath là **PWA**: cài được như ứng dụng lên máy tính (Chrome/Edge), Android, iPhone và iPad, và chạy offline. Soạn bài, lưu trên máy, xuất `.tex`, In/Lưu PDF và xuất PNG đều chạy ngay trên thiết bị. Máy chủ xuất file là **tùy chọn**: khi có, nút PDF/PNG cho bản dàn trang LaTeX chuẩn; khi không có hoặc mất mạng, app tự dùng bản xuất tại máy.
 
 Tài liệu kèm theo: [docs/DECISIONS.md](docs/DECISIONS.md) (kết quả spike, các quyết định), [docs/DEPLOY.md](docs/DEPLOY.md) (triển khai), [docs/BACKLOG.md](docs/BACKLOG.md).
 
@@ -62,7 +62,7 @@ Playwright tự bật backend (cổng 8000) và Vite (cổng 5173). Các test B2
 3. Sau lần mở đầu tiên, app chạy được khi không có mạng. Khi có bản mới, app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
 
 Trên màn cảm ứng:
-- Bấm vào dòng toán sẽ mở bàn phím toán. Tab **MathPad** có ∀ ∃ ⇒ ⇔ ∈ ℝ…, hệ phương trình, ma trận, ma trận bổ sung [A|b], thêm hàng/cột, phân số, căn.
+- Bấm vào dòng toán sẽ mở bàn phím toán. Tab **MintMath** có ∀ ∃ ⇒ ⇔ ∈ ℝ…, hệ phương trình, ma trận, ma trận bổ sung [A|b], thêm hàng/cột, phân số, căn.
 - Thanh nút ghim trên cùng thay cho các phím Ctrl/Alt: thêm dòng toán/chữ, nối dòng, đổi loại, đưa dòng lên/xuống, nhân đôi, xóa, hoàn tác.
 
 | Xuất | Không có máy chủ / ngoại tuyến | Có máy chủ |
@@ -92,8 +92,8 @@ Chạy được trên bản web/PWA (cần CORS trên bucket), app máy tính v�
 ## Thư viện bài tập và nhập LaTeX
 
 - **📚 Thư viện**: mọi bài đang soạn tự lưu vào thư viện trên thiết bị (IndexedDB). Trong thư viện có thể tìm theo tiêu đề hoặc nội dung, mở, nhân bản, xóa. **Sao lưu** tải toàn bộ thư viện thành một tệp `.json`; **Nhập tệp** khôi phục tệp đó trên máy khác (bài trùng thì giữ bản mới hơn).
-- **Mở tệp / Nhập tệp** nhận `.mathpad.json`, bản sao lưu và **`.tex`**:
-  - File `.tex` do MathPad xuất ra nhập lại đúng nguyên bài.
+- **Mở tệp / Nhập tệp** nhận `.mintmath.json`, bản sao lưu và **`.tex`**:
+  - File `.tex` do MintMath xuất ra nhập lại đúng nguyên bài.
   - File LaTeX viết tay đọc được: `\section`/`\title` thành tiêu đề, đoạn văn thành dòng chữ, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline` thành dòng toán (mỗi hàng của align là một dòng nối), `itemize`/`enumerate` thành dòng có dấu đầu dòng.
   - Đoạn văn có công thức `$…$` xen giữa thành một dòng toán, phần chữ bọc trong `\text{…}`.
 - Thư viện nằm trên từng thiết bị. Muốn dùng chung giữa máy tính và điện thoại thì kết nối Backblaze B2 (xem dưới), hoặc dùng Sao lưu rồi Nhập.
@@ -154,7 +154,7 @@ Danh sách đầy đủ nằm ở `frontend/src/core/shortcuts.ts`, cũng hiện
 
 ## Định dạng tài liệu
 
-Tài liệu là một đối tượng JSON `{version: 1, id, title, lines: [{id, type: "math"|"text", content, joinPrev?}], updatedAt}`. Cùng một cấu trúc dùng cho localStorage, file `.mathpad.json` trên máy hoặc trên B2, và thân request xuất file. Kiểu dữ liệu khai báo ở `frontend/src/core/types.ts` và khớp với `backend/app/models.py`.
+Tài liệu là một đối tượng JSON `{version: 1, id, title, lines: [{id, type: "math"|"text", content, joinPrev?}], updatedAt}`. Cùng một cấu trúc dùng cho localStorage, file `.mintmath.json` trên máy hoặc trên B2, và thân request xuất file. Kiểu dữ liệu khai báo ở `frontend/src/core/types.ts` và khớp với `backend/app/models.py`.
 
 API backend: `GET /api/health`, `POST /api/export/tex`, `POST /api/export/pdf`, `POST /api/export/png?dpi=200` (zip nếu nhiều trang). Giới hạn: thân request 1 MB, 2.000 dòng, biên dịch 20 giây, DPI từ 72 đến 600. Nội dung dòng toán chứa các lệnh đọc ghi file hoặc định nghĩa macro (`\input`, `\write`, `\def`, `\catcode`, `\csname`…) bị từ chối với lỗi 400 kèm `lineId`.
 

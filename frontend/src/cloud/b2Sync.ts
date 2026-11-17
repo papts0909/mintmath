@@ -1,8 +1,11 @@
-// Pure helpers for storing MathPad documents in a B2 bucket and syncing the
+// Pure helpers for storing MintMath documents in a B2 bucket and syncing the
 // on-device library with it.
 import type { RemoteObject } from "./b2";
 
-export const DOC_SUFFIX = ".mathpad.json";
+export const DOC_SUFFIX = ".mintmath.json";
+/** Documents saved before the app was renamed (MathPad) still count. */
+const LEGACY_DOC_SUFFIX = ".mathpad.json";
+export const isDocKey = (key: string) => key.endsWith(DOC_SUFFIX) || key.endsWith(LEGACY_DOC_SUFFIX);
 
 /** ASCII slug of a title for object keys (Vietnamese accents removed). */
 export function slugTitle(title: string): string {
@@ -17,7 +20,7 @@ export function slugTitle(title: string): string {
   return s || "khong-tieu-de";
 }
 
-/** Object key of a document: <prefix><slug>__<id>.mathpad.json. The id keeps
+/** Object key of a document: <prefix><slug>__<id>.mintmath.json. The id keeps
  *  the key stable across devices; the slug keeps the bucket readable. */
 export function docKey(prefix: string, doc: { id: string; title: string }): string {
   return `${prefix}${slugTitle(doc.title)}__${doc.id}${DOC_SUFFIX}`;
@@ -25,7 +28,7 @@ export function docKey(prefix: string, doc: { id: string; title: string }): stri
 
 /** Document id from an object key, or null for other files. */
 export function docIdFromKey(key: string): string | null {
-  const m = /__([A-Za-z0-9_-]+)\.mathpad\.json$/.exec(key);
+  const m = /__([A-Za-z0-9_-]+)\.(?:mintmath|mathpad)\.json$/.exec(key);
   return m ? m[1] : null;
 }
 

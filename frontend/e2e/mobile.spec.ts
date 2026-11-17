@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readLines } from "./helpers";
 
-test("touch layout: action bar, on-screen math keyboard with MathPad keys", async ({ page }) => {
+test("touch layout: action bar, on-screen math keyboard with MintMath keys", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -12,9 +12,9 @@ test("touch layout: action bar, on-screen math keyboard with MathPad keys", asyn
   await page.locator("math-field").first().tap();
   const kbd = page.locator(".ML__keyboard");
   await expect(kbd).toBeVisible();
-  await expect(kbd.getByText("MathPad", { exact: true }).first()).toBeVisible();
+  await expect(kbd.getByText("MintMath", { exact: true }).first()).toBeVisible();
 
-  // Insert an augmented matrix from the MathPad layout.
+  // Insert an augmented matrix from the MintMath layout.
   await kbd.locator(".MLK__keycap", { hasText: "[A|b]" }).first().tap();
   await expect.poll(async () => (await readLines(page))[0].content).toContain("\\begin{array}{cc|c}");
 

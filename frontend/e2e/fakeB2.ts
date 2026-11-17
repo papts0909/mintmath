@@ -1,10 +1,10 @@
-// In-memory stand-in for Backblaze B2's S3-compatible API (enough for MathPad).
+// In-memory stand-in for Backblaze B2's S3-compatible API (enough for MintMath).
 import type { Page, Route } from "@playwright/test";
 
 export const FAKE_B2 = {
   keyId: "004fakekeyid0000000000001",
   appKey: "K004fakeapplicationkey",
-  bucket: "mathpad-test",
+  bucket: "mintmath-test",
   endpoint: "s3.us-west-004.backblazeb2.com",
 };
 
@@ -86,5 +86,5 @@ export async function installFakeB2(page: Page, bucket: FakeBucket): Promise<voi
 }
 
 export const docKeys = (bucket: FakeBucket) =>
-  [...bucket.keys()].filter((k) => k.endsWith(".mathpad.json")).sort();
+  [...bucket.keys()].filter((k) => k.endsWith(".mintmath.json")).sort();
 export const textOf = (bucket: FakeBucket, key: string) => bucket.get(key)!.body.toString("utf-8");
