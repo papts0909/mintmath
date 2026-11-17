@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { downloadBlob } from "../api/exportClient";
 import { docFileName, DocFormatError, serializeDoc } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
@@ -30,6 +30,22 @@ export default function Toolbar(props: Props) {
   const selection = useDocStore((s) => s.selection);
   const b2 = useB2();
   const fileInput = useRef<HTMLInputElement>(null);
+  // The settings menu floats over the editor: close it on a click outside or Esc.
+  const settingsMenu = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const close = (e: Event) => {
+      const menu = settingsMenu.current;
+      if (!menu?.open) return;
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !menu.contains(e.target as Node))
+        menu.open = false;
+    };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", close, true);
+    };
+  }, []);
 
   // The open document is kept in the library, so starting a new one loses nothing.
   const newDoc = () => void switchToDoc(() => useDocStore.getState().newDoc());
@@ -164,7 +180,7 @@ export default function Toolbar(props: Props) {
           <button type="button" onClick={props.onToggleShortcuts} title="Ctrl+/">
             ⌨ Lệnh tắt
           </button>
-          <details className="settings-menu">
+          <details className="settings-menu" ref={settingsMenu}>
             <summary>⚙ Cài đặt</summary>
             <div role="group" aria-label="Cài đặt" className="settings-panel">
               <label>

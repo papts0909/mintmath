@@ -6,7 +6,6 @@ import {
   deleteFromB2,
   disconnectB2,
   downloadFromB2,
-  enableCorsFromApp,
   openFromB2,
   refreshB2,
   saveCurrentToB2,
@@ -159,108 +158,78 @@ function CopyLine({ text, label }: { text: string; label: string }) {
   );
 }
 
-/** Shown when the browser was blocked by a missing CORS rule on the bucket. */
+type Os = "mac" | "windows";
+const guessOs = (): Os => (/Windows/i.test(navigator.userAgent) ? "windows" : "mac");
+
+/** Shown when the browser was blocked by a missing CORS rule on the bucket.
+ *  Backblaze refuses bucket changes made from a browser, so the rule is set
+ *  with a short command that uses only tools every computer already has. */
 function CorsHelp() {
   const cors = useB2((s) => s.cors);
   const busy = useB2((s) => s.busy);
-  const [keyId, setKeyId] = useState("");
-  const [appKey, setAppKey] = useState("");
+  const [os, setOs] = useState<Os>(guessOs);
   if (!cors) return null;
-  const scriptUrl = new URL(`${import.meta.env.BASE_URL}b2-cors.mjs`, location.origin).href;
-  const run = `node b2-cors.mjs --bucket ${cors.cfg.bucket} --origin ${cors.origin}`;
-  const masterLabel = "của Master Application Key";
-
-  const steps2 = (
-    <ol>
-      <li>
-        Cài <b>Node.js</b> (bản LTS) từ nodejs.org nếu máy chưa có. Máy nào cũng được, không cần là máy đang
-        dùng.
-      </li>
-      <li>
-        Mở <b>Terminal</b> (macOS) hoặc <b>PowerShell</b> (Windows), chạy lần lượt:
-        <CopyLine label="tải (macOS)" text={`curl -fsSLO ${scriptUrl}`} />
-        <span className="muted small">Trên Windows dùng:</span>
-        <CopyLine label="tải (Windows)" text={`curl.exe -fsSLO ${scriptUrl}`} />
-        <CopyLine label="chạy" text={run} />
-      </li>
-      <li>
-        Lệnh hỏi keyID và applicationKey: dán Master Application Key (như cách 1). Thấy “✔ Đã đặt CORS” là
-        xong, quay lại đây bấm <b>Thử kết nối lại</b>.
-      </li>
-    </ol>
-  );
+  const app = new URL(import.meta.env.BASE_URL, location.origin).href;
+  const { bucket } = cors.cfg;
+  const mac = `curl -fsSL ${app}b2-cors.sh | sh -s -- ${bucket} ${cors.origin}`;
+  const win =
+    `$s=(iwr -UseBasicParsing ${app}b2-cors.ps1).RawContentStream.ToArray(); ` +
+    `& ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($s))) -Bucket ${bucket} -Origin ${cors.origin}`;
 
   return (
     <section className="b2-cors" aria-label="Bật truy cập cho bản web">
       <strong>Bật truy cập cho bản web (làm một lần)</strong>
       <p>
-        Trình duyệt chỉ cho MathPad đọc và lưu bài trong bucket <b>{cors.cfg.bucket}</b> khi bucket cho phép
-        địa chỉ <code>{cors.origin}</code>. App máy tính và app Android không cần bước này.
+        Trình duyệt chỉ cho MathPad đọc và lưu bài trong bucket <b>{bucket}</b> khi bucket cho phép địa chỉ{" "}
+        <code>{cors.origin}</code>. Backblaze không cho đổi cài đặt này từ trang web, nên cần chạy một lệnh
+        ngắn (khoảng 1 phút, không cài thêm gì). App máy tính và app Android không cần bước này.
       </p>
-
-      <h4>Cách 1: để MathPad tự bật</h4>
       <ol>
         <li>
-          Vào backblaze.com → <b>Application Keys</b>. Ở mục <b>Master Application Key</b>, bấm{" "}
-          <b>Generate New Master Application Key</b> rồi chép keyID và applicationKey. (Khóa dùng trong app
-          chỉ có quyền đọc/ghi tệp, không đổi được cài đặt bucket. Tạo Master key mới sẽ làm Master key cũ hết
-          hiệu lực.)
+          <b>Lấy Master Application Key:</b> vào backblaze.com → <b>Application Keys</b> → mục{" "}
+          <b>Master Application Key</b> → <b>Generate New Master Application Key</b>. Để trang đó mở, lát nữa
+          chép keyID và applicationKey. (Khóa đang dùng trong MathPad không có quyền đổi cài đặt bucket. Tạo
+          Master key mới làm Master key cũ hết hiệu lực.)
         </li>
-        <li>Dán vào đây và bấm nút bên dưới.</li>
+        <li>
+          <b>Chạy lệnh</b> trên máy tính:
+          <span className="b2-os" role="tablist" aria-label="Hệ điều hành">
+            <button type="button" role="tab" aria-selected={os === "mac"} onClick={() => setOs("mac")}>
+              macOS / Linux
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={os === "windows"}
+              onClick={() => setOs("windows")}
+            >
+              Windows
+            </button>
+          </span>
+          {os === "mac" ? (
+            <>
+              Mở <b>Terminal</b> (bấm ⌘ Space, gõ “Terminal”, Enter), dán lệnh này rồi Enter:
+              <CopyLine label="macOS" text={mac} />
+            </>
+          ) : (
+            <>
+              Mở <b>PowerShell</b> (bấm phím Windows, gõ “PowerShell”, Enter), dán lệnh này rồi Enter:
+              <CopyLine label="Windows" text={win} />
+            </>
+          )}
+        </li>
+        <li>
+          Lệnh hỏi <b>keyID</b> rồi <b>applicationKey</b> của Master key: dán vào, Enter (applicationKey không
+          hiện khi dán, vẫn bình thường). Khóa chỉ dùng cho lần này, không được lưu.
+        </li>
+        <li>
+          Thấy “✔ Xong” thì bấm <b>Thử kết nối lại</b> bên dưới.
+        </li>
       </ol>
-      <form
-        className="b2-form"
-        aria-label="Bật truy cập cho bản web"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (keyId.trim() && appKey.trim())
-            void enableCorsFromApp({ keyId, appKey }).then((ok) => {
-              if (ok) {
-                setKeyId("");
-                setAppKey("");
-              }
-            });
-        }}
-      >
-        <label>
-          keyID {masterLabel}
-          <input
-            value={keyId}
-            onChange={(e) => setKeyId(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </label>
-        <label>
-          applicationKey {masterLabel}
-          <input
-            type="password"
-            value={appKey}
-            onChange={(e) => setAppKey(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </label>
-        <button type="submit" className="primary" disabled={busy !== null || !keyId.trim() || !appKey.trim()}>
-          Bật truy cập và kết nối lại
-        </button>
-        <p className="muted small">
-          Master key chỉ dùng cho lần này để đổi cài đặt bucket. MathPad không lưu lại và không gửi đi đâu
-          ngoài Backblaze.
-        </p>
-      </form>
-
-      {cors.autoFailed ? (
-        <>
-          <h4>Cách 2: chạy một lệnh trên máy tính</h4>
-          {steps2}
-        </>
-      ) : (
-        <details className="b2-help">
-          <summary>Cách 2: chạy một lệnh trên máy tính</summary>
-          {steps2}
-        </details>
-      )}
+      <p className="muted small">
+        Máy không mở được Terminal/PowerShell (ví dụ máy công ty)? Mở shell.cloud.google.com bằng tài khoản
+        Google, dán lệnh macOS / Linux vào đó. Hoặc dùng MathPad trên điện thoại Android.
+      </p>
       <button type="button" disabled={busy !== null} onClick={() => void connectB2(cors.cfg)}>
         Thử kết nối lại
       </button>
