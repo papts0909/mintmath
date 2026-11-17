@@ -1,9 +1,14 @@
-# Publish the PWA to GitHub Pages. Runs only when started by hand
-# (Actions → "Deploy PWA to GitHub Pages" → Run workflow).
+# Publish the PWA to GitHub Pages: on every push to main that touches the
+# web app, or by hand (Actions → "Deploy PWA to GitHub Pages" → Run workflow).
 # One-time setup: Settings → Pages → Source: "GitHub Actions".
 name: Deploy PWA to GitHub Pages
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
