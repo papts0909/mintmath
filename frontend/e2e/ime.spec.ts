@@ -91,7 +91,8 @@ for (const composed of [false, true]) {
 }
 
 test("with the IME fix switched off, MathLive handles composition itself", async ({ page }) => {
-  await page.getByLabel("Sửa bộ gõ TV").uncheck();
+  await page.getByText("⚙ Cài đặt").click();
+  await page.getByLabel(/Sửa bộ gõ TV/).uncheck();
   await page.locator("math-field").first().click();
   await compose(page, ["x"], { composed: true });
   await page.keyboard.type("+1");

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "./components/Editor";
 import LibraryPanel from "./components/LibraryPanel";
 import ShortcutPanel from "./components/ShortcutPanel";
+import StatusBar from "./components/StatusBar";
 import Toolbar from "./components/Toolbar";
 import TouchBar from "./components/TouchBar";
 import { useDocStore } from "./core/docStore";
@@ -169,6 +170,7 @@ export default function App() {
         {showLibrary ? <LibraryPanel onClose={() => setShowLibrary(false)} onMessage={setToast} /> : null}
         {showShortcuts ? <ShortcutPanel onClose={() => setShowShortcuts(false)} /> : null}
       </main>
+      <StatusBar />
       {previewUrl ? (
         <div className="preview" role="dialog" aria-label="Xem trước bản in">
           <div className="preview-head">
