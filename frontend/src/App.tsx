@@ -104,8 +104,20 @@ export default function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.theme === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", settings.theme);
+    if (settings.theme !== "system") {
+      root.setAttribute("data-theme", settings.theme);
+      return;
+    }
+    // "Theo hệ thống": e-paper screens (slow refresh or monochrome) get the
+    // e-ink theme; others follow the light/dark preference.
+    const eink = window.matchMedia?.("(update: slow), (monochrome)");
+    const apply = () => {
+      if (eink?.matches) root.setAttribute("data-theme", "eink");
+      else root.removeAttribute("data-theme");
+    };
+    apply();
+    eink?.addEventListener?.("change", apply);
+    return () => eink?.removeEventListener?.("change", apply);
   }, [settings.theme]);
 
   useEffect(() => {

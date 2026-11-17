@@ -139,6 +139,10 @@ describe("persistence", () => {
   it("settings round-trip and validate", () => {
     saveSettings({ autoSubscript: false, imeFix: false, theme: "dark" });
     expect(loadSettings()).toEqual({ autoSubscript: false, imeFix: false, theme: "dark" });
+    for (const theme of ["eink", "eink-dark"] as const) {
+      saveSettings({ ...DEFAULT_SETTINGS, theme });
+      expect(loadSettings().theme).toBe(theme);
+    }
     localStorage.setItem("mathpad.settings.v1", JSON.stringify({ theme: "pink" }));
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
   });

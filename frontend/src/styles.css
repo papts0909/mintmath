@@ -1015,3 +1015,172 @@ button.cta:hover:not(:disabled) {
     display: none;
   }
 }
+
+/* ---------- e-ink ("Giấy") themes ----------
+   For e-paper screens (Boox, Bigme, PocketBook…): pure black and white, a
+   light grey only for secondary fills, thick borders instead of colour, no
+   shadows, transitions or animations (they ghost on e-ink). "eink-dark" is
+   the same, inverted. Picked in Settings, or automatically with "Theo hệ
+   thống" when the browser reports a slow-refresh or monochrome screen. */
+:root[data-theme="eink"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #000000;
+  --muted: #2b2b2b;
+  --border: #000000;
+  --accent: #000000;
+  --accent-soft: #e6e6e6;
+  --error: #000000;
+  --error-soft: #e6e6e6;
+  --selected: #d9d9d9;
+  --ok: #000000;
+  --line-focus: #ffffff;
+  --math-select: #000000;
+  --math-select-text: #ffffff;
+  --math-group: #d9d9d9;
+  --placeholder: #000000;
+  color-scheme: light;
+}
+:root[data-theme="eink-dark"] {
+  --bg: #000000;
+  --surface: #000000;
+  --text: #ffffff;
+  --muted: #d4d4d4;
+  --border: #ffffff;
+  --accent: #ffffff;
+  --accent-soft: #333333;
+  --error: #ffffff;
+  --error-soft: #333333;
+  --selected: #3d3d3d;
+  --ok: #ffffff;
+  --line-focus: #000000;
+  --math-select: #ffffff;
+  --math-select-text: #000000;
+  --math-group: #3d3d3d;
+  --placeholder: #ffffff;
+  color-scheme: dark;
+}
+:root[data-theme^="eink"] *,
+:root[data-theme^="eink"] *::before,
+:root[data-theme^="eink"] *::after {
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  scroll-behavior: auto !important;
+}
+:root[data-theme^="eink"] button,
+:root[data-theme^="eink"] select,
+:root[data-theme^="eink"] input,
+:root[data-theme^="eink"] .side-panel,
+:root[data-theme^="eink"] .settings-panel,
+:root[data-theme^="eink"] .preview,
+:root[data-theme^="eink"] .ime-preview,
+:root[data-theme^="eink"] .toast,
+:root[data-theme^="eink"] .b2-cta,
+:root[data-theme^="eink"] .b2-cors {
+  border-width: 2px;
+  border-color: var(--text);
+}
+/* No hover tint: e-ink screens are touched, and repaints ghost. */
+:root[data-theme^="eink"] button:not(.primary):not(.cta):hover:not(:disabled),
+:root[data-theme^="eink"] .line:hover,
+:root[data-theme^="eink"] .doc-tab:not(.is-active):hover,
+:root[data-theme^="eink"] .doc-tab-close:hover,
+:root[data-theme^="eink"] .doc-tab-new:hover {
+  background: inherit;
+  filter: none;
+}
+:root[data-theme^="eink"] button.primary,
+:root[data-theme^="eink"] button.cta {
+  background: var(--text);
+  color: var(--bg);
+}
+:root[data-theme^="eink"] button:disabled {
+  opacity: 1;
+  border-style: dashed;
+  color: var(--muted);
+}
+:root[data-theme^="eink"] button:focus-visible,
+:root[data-theme^="eink"] input:focus-visible,
+:root[data-theme^="eink"] select:focus-visible,
+:root[data-theme^="eink"] summary:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+/* The line being edited: a thick frame and a solid bar on the left. */
+:root[data-theme^="eink"] .line.is-focused {
+  border: 2px solid var(--text);
+  box-shadow: inset 8px 0 0 var(--text) !important;
+}
+:root[data-theme^="eink"] .line.has-error {
+  border: 2px dashed var(--text);
+}
+:root[data-theme^="eink"] .status.error {
+  font-weight: 700;
+}
+:root[data-theme^="eink"] .line.is-focused .gutter {
+  text-decoration: underline;
+}
+:root[data-theme^="eink"] .math-line math-field {
+  --_caret-width: 4px;
+}
+:root[data-theme^="eink"] .tab-bar {
+  border-bottom: 2px solid var(--text);
+}
+:root[data-theme^="eink"] .doc-tab.is-active {
+  border: 2px solid var(--text);
+  border-bottom: 4px solid var(--bg);
+}
+:root[data-theme^="eink"] .doc-tab.is-active [role="tab"] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
+/* MathLive's on-screen keyboard (touch devices) in black and white. */
+:root[data-theme^="eink"] {
+  --keyboard-accent-color: var(--text);
+  --keyboard-background: var(--bg);
+  --keyboard-border: var(--text);
+  --keyboard-horizontal-rule: 2px solid var(--text);
+  --keyboard-toolbar-background: var(--bg);
+  --keyboard-toolbar-background-hover: var(--bg);
+  --keyboard-toolbar-background-selected: var(--bg);
+  --keyboard-toolbar-text: var(--muted);
+  --keyboard-toolbar-text-active: var(--text);
+  --keycap-background: var(--bg);
+  --keycap-background-hover: var(--bg);
+  --keycap-background-active: var(--text);
+  --keycap-background-pressed: var(--text);
+  --keycap-border: var(--text);
+  --keycap-border-bottom: var(--text);
+  --keycap-text: var(--text);
+  --keycap-text-active: var(--bg);
+  --keycap-text-hover: var(--text);
+  --keycap-text-pressed: var(--bg);
+  --keycap-primary-background: var(--text);
+  --keycap-primary-background-hover: var(--text);
+  --keycap-primary-text: var(--bg);
+  --keycap-secondary-background: var(--selected);
+  --keycap-secondary-background-hover: var(--selected);
+  --keycap-secondary-border: var(--text);
+  --keycap-secondary-border-bottom: var(--text);
+  --keycap-secondary-text: var(--text);
+  --keycap-shift-color: var(--text);
+  --keycap-shift-text: var(--text);
+  --variant-keycap-background-active: var(--text);
+}
+:root[data-theme^="eink"] .math-line math-field::part(virtual-keyboard-toggle) {
+  color: var(--text);
+}
+/* MathLive hides keycap borders in some colour schemes; e-ink needs them. */
+:root[data-theme^="eink"] .ML__keyboard {
+  --_keycap-border: var(--text) !important;
+  --_keycap-border-bottom: var(--text) !important;
+  --_keycap-secondary-border: var(--text) !important;
+  --_keycap-secondary-border-bottom: var(--text) !important;
+}
+:root[data-theme^="eink"] .ML__keyboard .MLK__keycap {
+  border: 1.5px solid var(--text) !important;
+  box-sizing: border-box;
+}
