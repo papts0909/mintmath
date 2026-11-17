@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { searchShortcuts, SHORTCUT_GROUPS } from "../core/shortcuts";
 
 interface Props {
@@ -39,7 +40,7 @@ export default function ShortcutPanel({ onClose }: Props) {
       <div className="panel-head">
         <h2>Lệnh tắt</h2>
         <button type="button" onClick={onClose} aria-label="Đóng bảng lệnh tắt">
-          ✕
+          <X className="icon" aria-hidden="true" />
         </button>
       </div>
       <input

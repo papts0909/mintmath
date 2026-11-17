@@ -72,7 +72,7 @@ def test_rate_limit(client: TestClient, monkeypatch) -> None:  # type: ignore[no
 
 def test_file_stem() -> None:
     assert export.file_stem('  Bài: 1/2 "x" ') == "Bài_12_x"
-    assert export.file_stem("") == "mathpad"
+    assert export.file_stem("") == "mintmath"
 
 
 @requires_tex

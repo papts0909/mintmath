@@ -1,4 +1,16 @@
 import { useEffect, useRef } from "react";
+import {
+  Cloud,
+  CloudUpload,
+  Download,
+  FilePlus,
+  FolderOpen,
+  Keyboard,
+  LibraryBig,
+  Redo2,
+  Settings as SettingsIcon,
+  Undo2,
+} from "lucide-react";
 import { downloadBlob } from "../api/exportClient";
 import { docFileName, DocFormatError, serializeDoc } from "../core/docFormat";
 import { ACCEPTED_FILES, importFile } from "../core/fileImport";
@@ -49,7 +61,7 @@ export default function Toolbar(props: Props) {
   }, []);
 
   // The open document is kept in the library, so starting a new one loses nothing.
-  const newDoc = () => void switchToDoc(() => useDocStore.getState().newDoc());
+  const newDoc = () => void switchToDoc(null);
 
   const download = () => {
     const doc = useDocStore.getState().doc;
@@ -64,7 +76,7 @@ export default function Toolbar(props: Props) {
         // Opening an older copy must not overwrite the library's version.
         const existing = await getDoc(doc.id).catch(() => null);
         if (existing && existing.updatedAt !== doc.updatedAt) doc.id = newId();
-        await switchToDoc(() => useDocStore.getState().loadDoc(doc));
+        await switchToDoc(doc);
       }
       props.onMessage(r.message);
     } catch (e) {
@@ -94,9 +106,11 @@ export default function Toolbar(props: Props) {
       <div className="toolbar-row">
         <div role="group" aria-label="Tệp">
           <button type="button" onClick={props.onToggleLibrary} title="Các bài đã lưu trên máy này">
-            📚 Thư viện
+            <LibraryBig className="icon" aria-hidden="true" />
+            Thư viện
           </button>
           <button type="button" onClick={newDoc}>
+            <FilePlus className="icon" aria-hidden="true" />
             Tài liệu mới
           </button>
           <button
@@ -104,6 +118,7 @@ export default function Toolbar(props: Props) {
             onClick={() => fileInput.current?.click()}
             title=".mintmath.json, .tex hoặc bản sao lưu"
           >
+            <FolderOpen className="icon" aria-hidden="true" />
             Mở tệp
           </button>
           <input
@@ -119,6 +134,7 @@ export default function Toolbar(props: Props) {
             }}
           />
           <button type="button" onClick={download}>
+            <Download className="icon" aria-hidden="true" />
             Tải về
           </button>
         </div>
@@ -129,7 +145,8 @@ export default function Toolbar(props: Props) {
             onClick={() => useDocStore.getState().undo()}
             title="Ctrl+Z"
           >
-            ↶ Hoàn tác
+            <Undo2 className="icon" aria-hidden="true" />
+            Hoàn tác
           </button>
           <button
             type="button"
@@ -137,7 +154,8 @@ export default function Toolbar(props: Props) {
             onClick={() => useDocStore.getState().redo()}
             title="Ctrl+Shift+Z"
           >
-            ↷ Làm lại
+            <Redo2 className="icon" aria-hidden="true" />
+            Làm lại
           </button>
         </div>
         <ExportMenu onPreview={props.onPreview} />
@@ -153,10 +171,12 @@ export default function Toolbar(props: Props) {
                 onClick={() => void saveCurrentToB2()}
                 title="Lưu bài đang mở lên B2 (Ctrl+S)"
               >
-                ☁ Lưu lên B2
+                <CloudUpload className="icon" aria-hidden="true" />
+                Lưu lên B2
               </button>
               <button type="button" onClick={props.onOpenB2} title="Mở, đồng bộ, quản lý tệp trên B2">
-                ☁ {b2.config.bucket}
+                <Cloud className="icon" aria-hidden="true" />
+                {b2.config.bucket}
               </button>
               {b2.busy ? <span className="muted">{b2.busy}</span> : null}
               {!b2.busy && savedTime ? <span className="muted">Đã lưu lên B2 lúc {savedTime}</span> : null}
@@ -173,16 +193,21 @@ export default function Toolbar(props: Props) {
               onClick={props.onOpenB2}
               title="Lưu và mở bài trên tài khoản B2 của bạn"
             >
-              ☁ Kết nối Backblaze B2
+              <Cloud className="icon" aria-hidden="true" />
+              Kết nối Backblaze B2
             </button>
           )}
         </div>
         <div className="settings">
           <button type="button" onClick={props.onToggleShortcuts} title="Ctrl+/">
-            ⌨ Lệnh tắt
+            <Keyboard className="icon" aria-hidden="true" />
+            Lệnh tắt
           </button>
           <details className="settings-menu" ref={settingsMenu}>
-            <summary>⚙ Cài đặt</summary>
+            <summary>
+              <SettingsIcon className="icon" aria-hidden="true" />
+              Cài đặt
+            </summary>
             <div role="group" aria-label="Cài đặt" className="settings-panel">
               <label>
                 <input

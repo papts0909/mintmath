@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CloudUpload, Eye, FileCode, FileText, Image, Printer } from "lucide-react";
 import {
   downloadBlob,
   ExportError,
@@ -145,12 +146,15 @@ export default function ExportMenu({ onPreview }: Props) {
     <div className="export-menu" role="group" aria-label="Xuất file">
       <span className="group-label">Xuất:</span>
       <button type="button" disabled={busy !== null} onClick={() => void tex()}>
+        <FileCode className="icon" aria-hidden="true" />
         LaTeX
       </button>
       <button type="button" disabled={busy !== null} onClick={() => void pdf()}>
+        <FileText className="icon" aria-hidden="true" />
         PDF
       </button>
       <button type="button" disabled={busy !== null} onClick={() => void png()}>
+        <Image className="icon" aria-hidden="true" />
         PNG
       </button>
       {NATIVE ? null : (
@@ -161,6 +165,7 @@ export default function ExportMenu({ onPreview }: Props) {
             onClick={() => void preview()}
             title="Xem trước bản in"
           >
+            <Eye className="icon" aria-hidden="true" />
             Xem trước
           </button>
           <button
@@ -169,6 +174,7 @@ export default function ExportMenu({ onPreview }: Props) {
             onClick={() => void run("bản in", async () => print())}
             title="In hoặc lưu PDF ngay trên máy, không cần mạng"
           >
+            <Printer className="icon" aria-hidden="true" />
             In
           </button>
         </>
@@ -180,7 +186,8 @@ export default function ExportMenu({ onPreview }: Props) {
           onClick={() => void exportToB2()}
           title="Lưu bản .tex và PDF của bài đang mở lên Backblaze B2"
         >
-          ⬆ B2
+          <CloudUpload className="icon" aria-hidden="true" />
+          B2
         </button>
       ) : null}
       {status ? (

@@ -5,6 +5,7 @@ import { saveCurrentToB2, useB2 } from "./cloud/b2Actions";
 import ShortcutPanel from "./components/ShortcutPanel";
 import StatusBar from "./components/StatusBar";
 import Toolbar from "./components/Toolbar";
+import TabBar from "./components/TabBar";
 import TouchBar from "./components/TouchBar";
 import { useDocStore } from "./core/docStore";
 import {
@@ -16,6 +17,8 @@ import {
   type Settings,
 } from "./core/persistence";
 import { putDoc, requestPersistentStorage } from "./core/library";
+import { receiveNewerDoc, restoreTabs } from "./core/tabs";
+import type { Doc } from "./core/types";
 import { isNativeApp } from "./native";
 
 let persistAsked = false;
@@ -23,9 +26,15 @@ let persistAsked = false;
 // Restore the last session before the first render.
 const restored = loadLocal();
 if (restored) useDocStore.getState().loadDoc(restored.doc);
+const tabsRestored = restoreTabs();
+
+// Other windows of the app announce saved documents here, so a document open
+// in two windows stays current in both.
+const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("mintmath-docs");
 
 export default function App() {
   const [savedLocally, setSavedLocally] = useState(true);
+  const unsaved = useRef(false);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -42,6 +51,8 @@ export default function App() {
       createAutosaver(() => {
         const st = useDocStore.getState();
         saveLocal({ doc: st.doc });
+        channel?.postMessage({ type: "saved", doc: st.doc });
+        unsaved.current = false;
         // Every document also lives in the on-device library.
         putDoc(st.doc)
           .then((stored) => {
@@ -61,6 +72,8 @@ export default function App() {
   useEffect(() => {
     const unsub = useDocStore.subscribe((s, prev) => {
       if (s.doc !== prev.doc) {
+        // Loading another document is not an edit.
+        unsaved.current = s.doc.id === prev.doc.id;
         setSavedLocally(false);
         autosaver.schedule();
       }
@@ -73,6 +86,21 @@ export default function App() {
       autosaver.flush();
     };
   }, [autosaver]);
+
+  useEffect(() => {
+    if (!channel) return;
+    const onMessage = (e: MessageEvent<{ type: string; doc: Doc }>) => {
+      if (e.data?.type !== "saved") return;
+      const r = receiveNewerDoc(e.data.doc, unsaved.current);
+      if (r === "loaded") setToast("Bài này vừa được cập nhật từ một cửa sổ khác.");
+      else if (r === "kept")
+        setToast(
+          "Bài này cũng đang được sửa ở một cửa sổ khác. Bản ở cửa sổ lưu sau cùng sẽ được giữ — nên chỉ sửa ở một nơi.",
+        );
+    };
+    channel.addEventListener("message", onMessage);
+    return () => channel.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -143,10 +171,12 @@ export default function App() {
     };
   }, []);
 
-  // Focus the first line on start.
+  // Focus the first line on start (once this window's tabs are back).
   useEffect(() => {
-    const st = useDocStore.getState();
-    if (!st.focusedLineId) st.focusLine(st.doc.lines[0].id, "end");
+    void tabsRestored.then(() => {
+      const st = useDocStore.getState();
+      if (!st.focusedLineId) st.focusLine(st.doc.lines[0].id, "end");
+    });
   }, []);
 
   const updateSettings = (s: Settings) => {
@@ -177,6 +207,7 @@ export default function App() {
         }}
         onMessage={setToast}
       />
+      <TabBar />
       <TouchBar />
       <main className="workspace">
         <Editor autoSubscript={settings.autoSubscript} imeFix={settings.imeFix} />

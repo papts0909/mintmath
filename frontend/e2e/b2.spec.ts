@@ -32,8 +32,8 @@ test("connect with your own key: validation, wrong key, then success", async ({ 
   const bucket: FakeBucket = new Map();
   await start(page, bucket);
 
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
-  await expect(panel(page).getByRole("tab", { name: "☁ Backblaze B2" })).toHaveAttribute(
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
+  await expect(panel(page).getByRole("tab", { name: "Backblaze B2" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -47,17 +47,17 @@ test("connect with your own key: validation, wrong key, then success", async ({ 
 
   await connect(page);
   await expect(panel(page).getByText(`Đã kết nối bucket ${FAKE_B2.bucket}.`)).toBeVisible();
-  await expect(page.getByRole("button", { name: "☁ Lưu lên B2" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lưu lên B2", exact: true })).toBeVisible();
 
   // The connection is remembered on this device.
   await page.reload();
-  await expect(page.getByRole("button", { name: "☁ Lưu lên B2" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lưu lên B2", exact: true })).toBeVisible();
 });
 
 test("save with Ctrl+S, rename, open on another device, sync both ways", async ({ page, browser }) => {
   const bucket: FakeBucket = new Map();
   await start(page, bucket);
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(page);
   await page.getByRole("button", { name: "Đóng thư viện" }).click();
 
@@ -73,14 +73,14 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
 
   // Renaming replaces the object instead of leaving a stale copy.
   await page.locator(".title-input").fill("Bài 1 sửa");
-  await page.getByRole("button", { name: "☁ Lưu lên B2" }).click();
+  await page.getByRole("button", { name: "Lưu lên B2", exact: true }).click();
   await expect.poll(() => docKeys(bucket)).toEqual([key1.replace("Bai-1__", "Bai-1-sua__")]);
 
   // Another device: connect, open from B2.
   const ctx2 = await browser.newContext();
   const other = await ctx2.newPage();
   await start(other, bucket);
-  await other.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await other.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(other);
   await expect(panel(other).getByTestId("b2-item")).toHaveCount(1);
   await panel(other)
@@ -95,13 +95,13 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
   await other.keyboard.press("End");
   await other.keyboard.type("+1");
   await expect.poll(async () => (await readLines(other))[0].content).toBe("x^2+1");
-  await other.getByRole("button", { name: /☁ mintmath-test/ }).click();
-  await panel(other).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
+  await other.getByRole("button", { name: /^mintmath-test$/ }).click();
+  await panel(other).getByRole("button", { name: "Đồng bộ thư viện" }).click();
   await expect(panel(other).getByText(/Đồng bộ xong: 1 bài lên B2/)).toBeVisible();
 
   // First device syncs and receives the edit.
-  await page.getByRole("button", { name: /☁ mintmath-test/ }).click();
-  await panel(page).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
+  await page.getByRole("button", { name: /^mintmath-test$/ }).click();
+  await panel(page).getByRole("button", { name: "Đồng bộ thư viện" }).click();
   await expect(panel(page).getByText(/1 bài về máy/)).toBeVisible();
   await expect.poll(async () => (await readLines(page))[0].content).toBe("x^2+1");
   await ctx2.close();
@@ -110,7 +110,7 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
 test("edits on both devices keep both versions", async ({ page, browser }) => {
   const bucket: FakeBucket = new Map();
   await start(page, bucket);
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(page);
   await page.getByRole("button", { name: "Đóng thư viện" }).click();
   await page.locator(".title-input").fill("Chung");
@@ -122,7 +122,7 @@ test("edits on both devices keep both versions", async ({ page, browser }) => {
   const ctx2 = await browser.newContext();
   const other = await ctx2.newPage();
   await start(other, bucket);
-  await other.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await other.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(other);
   await panel(other).getByTestId("b2-item").first().getByRole("button").first().click();
   await other.locator("math-field").first().click();
@@ -136,10 +136,10 @@ test("edits on both devices keep both versions", async ({ page, browser }) => {
   await page.keyboard.press("End");
   await page.keyboard.type("c");
   await expect.poll(async () => (await readLines(page))[0].content).toBe("ac");
-  await page.getByRole("button", { name: /☁ mintmath-test/ }).click();
-  await panel(page).getByRole("button", { name: "⇅ Đồng bộ thư viện" }).click();
+  await page.getByRole("button", { name: /^mintmath-test$/ }).click();
+  await panel(page).getByRole("button", { name: "Đồng bộ thư viện" }).click();
   await expect(panel(page).getByText(/sửa ở cả hai nơi/)).toBeVisible();
-  await panel(page).getByRole("tab", { name: "💻 Trên máy" }).click();
+  await panel(page).getByRole("tab", { name: "Trên máy" }).click();
   await expect(panel(page).getByText("Chung (bản trên B2)")).toBeVisible();
   await ctx2.close();
 });
@@ -149,7 +149,7 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
 }) => {
   const bucket: FakeBucket = new Map();
   await start(page, bucket);
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(page);
 
   await panel(page)
@@ -170,7 +170,7 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
   expect(readFileSync((await dl.path())!, "utf-8")).toContain("\\int_0^1");
 
   await page.route(/\/api\/export\//, (r) => r.abort("internetdisconnected"));
-  await page.getByRole("button", { name: "⬆ B2" }).click();
+  await page.getByRole("button", { name: "B2", exact: true }).click();
   await expect
     .poll(() => [...bucket.keys()].sort())
     .toEqual(expect.arrayContaining(["mintmath/de-thi.tex", "mintmath/Đề_thi.tex", "mintmath/Đề_thi.pdf"]));
@@ -182,7 +182,7 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
 
   page.once("dialog", (d) => void d.accept());
   await panel(page).getByRole("button", { name: "Ngắt kết nối B2" }).click();
-  await expect(page.getByRole("button", { name: "☁ Kết nối Backblaze B2" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Kết nối Backblaze B2" })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("mathpad.b2.v1"))).toBeNull();
 });
 
@@ -203,7 +203,7 @@ test("missing CORS rule: the app shows a ready-to-copy command, then connects", 
   const state = { allowed: [] as string[] };
   await start(page, bucket);
   await corsGate(page, state);
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(page);
   const alert = panel(page).getByRole("alert");
   await expect(alert).toContainText("chưa cho phép trang http://localhost:5173");
@@ -247,7 +247,7 @@ test("a network that blocks Backblaze is not reported as a CORS problem", async 
   await page.evaluate(() => localStorage.clear());
   await page.route(`https://${FAKE_B2.endpoint}/**`, (r) => r.abort("blockedbyclient"));
   await freshPage(page);
-  await page.getByRole("button", { name: "☁ Kết nối Backblaze B2" }).click();
+  await page.getByRole("button", { name: "Kết nối Backblaze B2" }).click();
   await connect(page);
   await expect(panel(page).getByRole("alert")).toContainText("chặn Backblaze");
   await expect(panel(page).getByRole("region", { name: "Bật truy cập cho bản web" })).toHaveCount(0);

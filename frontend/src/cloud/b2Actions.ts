@@ -1,5 +1,6 @@
 // B2 state for the UI and the operations behind its buttons.
 import { create } from "zustand";
+import { receiveNewerDoc, useTabs } from "../core/tabs";
 import { DocFormatError, parseDocText, serializeDoc } from "../core/docFormat";
 import { useDocStore } from "../core/docStore";
 import { getDoc, listDocs, putDoc } from "../core/library";
@@ -364,10 +365,11 @@ export async function syncLibraryWithB2(): Promise<{ up: number; down: number; c
       }
     }
     saveSyncState(state);
-    // The open document may have been updated from B2.
-    const open = useDocStore.getState().doc;
-    const fresh = await getDoc(open.id).catch(() => null);
-    if (fresh && fresh.updatedAt !== open.updatedAt) useDocStore.getState().loadDoc(fresh);
+    // Open documents (any tab) may have been updated from B2.
+    for (const { id } of useTabs.getState().tabs) {
+      const fresh = await getDoc(id).catch(() => null);
+      if (fresh) receiveNewerDoc(fresh, false);
+    }
     const text =
       up + down + conflicts === 0
         ? "Thư viện và B2 đã khớp."
