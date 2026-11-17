@@ -64,6 +64,9 @@ APP_KEY=${B2_APP_KEY:-}
 [ -n "$KEY_ID" ] || KEY_ID=$(ask "keyID của Master Application Key: " 0)
 [ -n "$APP_KEY" ] || APP_KEY=$(ask "applicationKey của Master Application Key (không hiện khi gõ): " 1)
 [ -n "$KEY_ID" ] && [ -n "$APP_KEY" ] || die "Cần keyID và applicationKey."
+case $KEY_ID$APP_KEY in
+  *[!A-Za-z0-9+/=_-]*) die "keyID hoặc applicationKey có ký tự lạ. Chép lại từ trang Backblaze." ;;
+esac
 
 # Khóa đi qua tệp cấu hình tạm (không lộ trên dòng lệnh), xóa khi xong.
 umask 077

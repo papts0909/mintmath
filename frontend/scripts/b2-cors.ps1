@@ -38,6 +38,7 @@ if (-not $appKey) {
 }
 $keyId = "$keyId".Trim(); $appKey = "$appKey".Trim()
 if (-not $keyId -or -not $appKey) { Fail "Cần keyID và applicationKey."; return }
+if ("$keyId$appKey" -notmatch '^[A-Za-z0-9+/=_-]+$') { Fail "keyID hoặc applicationKey có ký tự lạ. Chép lại từ trang Backblaze."; return }
 
 function StatusOf($err) {
   try { return [int]$err.Exception.Response.StatusCode } catch { return 0 }
