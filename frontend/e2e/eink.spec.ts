@@ -16,7 +16,7 @@ async function pickTheme(page: Page, label: string) {
 test.beforeEach(async ({ page }) => freshPage(page));
 
 test("e-ink theme: black on white, thick focus frame, no shadows or transitions", async ({ page }) => {
-  await pickTheme(page, "Giấy (e-ink)");
+  await pickTheme(page, "Giấy sáng");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "eink");
   expect(await css(page, "body", "background-color")).toBe("rgb(255, 255, 255)");
   expect(await css(page, "body", "color")).toBe("rgb(0, 0, 0)");
@@ -41,25 +41,45 @@ test("e-ink theme: black on white, thick focus frame, no shadows or transitions"
 });
 
 test("e-ink dark theme is the same, inverted", async ({ page }) => {
-  await pickTheme(page, "Giấy tối (e-ink)");
+  await pickTheme(page, "Giấy tối");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "eink-dark");
   expect(await css(page, "body", "background-color")).toBe("rgb(0, 0, 0)");
   expect(await css(page, "body", "color")).toBe("rgb(255, 255, 255)");
 });
 
-test("'Theo hệ thống' picks the e-ink theme on a monochrome screen", async ({ page }) => {
-  await page.addInitScript(() => {
-    const real = window.matchMedia.bind(window);
-    window.matchMedia = (q: string) =>
-      q.includes("monochrome")
-        ? ({
-            matches: true,
-            media: q,
-            addEventListener() {},
-            removeEventListener() {},
-          } as unknown as MediaQueryList)
-        : real(q);
-  });
-  await page.reload();
+test("by default the e-ink theme follows the device's light/dark setting", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "eink");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "eink-dark");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "eink");
+  // The colour themes are still there.
+  await pickTheme(page, "Màu – tối");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});
+
+test("Zen mode shows only the document; Ctrl+. or the button brings the rest back", async ({ page }) => {
+  await page.keyboard.type("x^2");
+  await page.getByRole("button", { name: "Zen", exact: true }).click();
+  for (const name of ["Thư viện", "Kết nối Backblaze B2", "Cài đặt"])
+    await expect(page.getByRole("button", { name, exact: true })).toBeHidden();
+  await expect(page.locator(".toolbar")).toBeHidden();
+  await expect(page.locator(".tab-bar")).toBeHidden();
+  await expect(page.locator(".status-bar")).toBeHidden();
+  await expect(page.locator("math-field").first()).toBeVisible();
+
+  // Still editable, and kept after a reload.
+  await page.locator("math-field").first().click();
+  await page.keyboard.press("End");
+  await page.keyboard.type("+1");
+  await page.reload();
+  await expect(page.locator(".toolbar")).toBeHidden();
+
+  await page.getByRole("button", { name: "Thoát Zen" }).click();
+  await expect(page.locator(".toolbar")).toBeVisible();
+  await page.keyboard.press("Control+.");
+  await expect(page.locator(".toolbar")).toBeHidden();
+  await page.keyboard.press("Control+.");
+  await expect(page.locator(".toolbar")).toBeVisible();
 });

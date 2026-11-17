@@ -205,6 +205,7 @@ test("layout fits a 380 px wide screen and follows the dark theme", async ({ pag
   await page.screenshot({ path: "test-results/narrow-light.png" });
   await page.getByText("Cài đặt").click();
   await page.getByRole("combobox").selectOption("dark");
+  await page.keyboard.press("Escape");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgb(22, 24, 28)");
   await page.screenshot({ path: "test-results/narrow-dark.png" });

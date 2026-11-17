@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import {
   Cloud,
+  Expand,
   CloudUpload,
   Download,
   FilePlus,
@@ -21,6 +22,7 @@ import type { Settings } from "../core/persistence";
 import { saveCurrentToB2, useB2 } from "../cloud/b2Actions";
 import { copyLines } from "./Editor";
 import { Logo } from "./Logo";
+import { THEME_OPTIONS } from "../core/theme";
 import ExportMenu from "./ExportMenu";
 import InstallBar from "./InstallBar";
 import { switchToDoc } from "./LibraryPanel";
@@ -34,6 +36,7 @@ interface Props {
   onOpenB2: () => void;
   onPreview: (url: string) => void;
   onMessage: (text: string) => void;
+  onZen: () => void;
 }
 
 export default function Toolbar(props: Props) {
@@ -102,6 +105,15 @@ export default function Toolbar(props: Props) {
         <span className="save-state" role="status" aria-live="polite">
           {props.savedLocally ? "Đã lưu" : "Đang lưu…"}
         </span>
+        <button
+          type="button"
+          className="zen-toggle"
+          onClick={props.onZen}
+          title="Chế độ Zen: chỉ còn phần làm toán (Ctrl+.)"
+        >
+          <Expand className="icon" aria-hidden="true" />
+          Zen
+        </button>
       </div>
       <div className="toolbar-row">
         <div role="group" aria-label="Tệp">
@@ -233,11 +245,11 @@ export default function Toolbar(props: Props) {
                     props.onSettings({ ...props.settings, theme: e.target.value as Settings["theme"] })
                   }
                 >
-                  <option value="system">Theo hệ thống</option>
-                  <option value="light">Sáng</option>
-                  <option value="dark">Tối</option>
-                  <option value="eink">Giấy (e-ink)</option>
-                  <option value="eink-dark">Giấy tối (e-ink)</option>
+                  {THEME_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>

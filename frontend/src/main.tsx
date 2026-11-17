@@ -12,7 +12,11 @@ import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/cormorant-garamond/latin-500.css";
 import "@fontsource/cormorant-garamond/latin-500-italic.css";
 import "./styles.css";
+import { loadSettings } from "./core/persistence";
+import { applyTheme } from "./core/theme";
 
+// Set the theme before the first paint (no flash of the wrong colours).
+applyTheme(loadSettings().theme)(); // App keeps it updated from here on
 setupPwa();
 
 createRoot(document.getElementById("root")!).render(

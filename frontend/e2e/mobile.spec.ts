@@ -31,3 +31,17 @@ test("touch layout: action bar, on-screen math keyboard with MintMath keys", asy
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: "test-results/mobile.png" });
 });
+
+test("touch layout: the settings menu fits on the screen", async ({ page }) => {
+  await page.goto("/");
+  await page.getByText("Cài đặt").tap();
+  const panel = page.getByRole("group", { name: "Cài đặt" });
+  await expect(panel).toBeVisible();
+  const box = (await panel.boundingBox())!;
+  const vw = page.viewportSize()!.width;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(vw);
+  // Nothing covers it: the theme picker can be used.
+  await panel.getByLabel("Giao diện").selectOption({ label: "Giấy tối" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "eink-dark");
+});

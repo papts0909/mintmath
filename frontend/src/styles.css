@@ -725,6 +725,23 @@ kbd {
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
+/* Above the sticky touch bar while the menu is open. */
+.toolbar:has(.settings-menu[open]) {
+  z-index: 20;
+}
+/* Phones: the menu spans the toolbar's width instead of hanging off-screen. */
+@media (max-width: 640px) {
+  .settings-menu {
+    position: static;
+  }
+  .settings-panel {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    margin-top: 6px;
+    min-width: 0;
+  }
+}
 .settings-panel label {
   display: flex;
   align-items: center;
@@ -1183,4 +1200,44 @@ button.cta:hover:not(:disabled) {
 :root[data-theme^="eink"] .ML__keyboard .MLK__keycap {
   border: 1.5px solid var(--text) !important;
   box-sizing: border-box;
+}
+
+:root[data-theme^="eink"] input[type="checkbox"],
+:root[data-theme^="eink"] input[type="radio"] {
+  accent-color: var(--text);
+}
+
+/* ---------- Zen mode: only the document ---------- */
+.app.is-zen .toolbar,
+.app.is-zen .tab-bar,
+.app.is-zen .touch-bar,
+.app.is-zen .status-bar,
+.app.is-zen .side-panel {
+  display: none !important;
+}
+.app.is-zen .workspace {
+  padding-top: 48px;
+}
+.zen-toggle {
+  flex-shrink: 0;
+}
+.zen-exit {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 30;
+  opacity: 0.55;
+  background: var(--bg);
+}
+.zen-exit:hover,
+.zen-exit:focus-visible {
+  opacity: 1;
+}
+:root[data-theme^="eink"] .zen-exit {
+  opacity: 1;
+}
+@media print {
+  .zen-exit {
+    display: none;
+  }
 }

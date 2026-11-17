@@ -1,3 +1,4 @@
+import { Shrink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "./components/Editor";
 import LibraryPanel, { type LibraryTab } from "./components/LibraryPanel";
@@ -18,10 +19,12 @@ import {
 } from "./core/persistence";
 import { putDoc, requestPersistentStorage } from "./core/library";
 import { receiveNewerDoc, restoreTabs } from "./core/tabs";
+import { applyTheme } from "./core/theme";
 import type { Doc } from "./core/types";
 import { isNativeApp } from "./native";
 
 let persistAsked = false;
+const ZEN_KEY = "mathpad.zen.v1";
 
 // Restore the last session before the first render.
 const restored = loadLocal();
@@ -45,6 +48,28 @@ export default function App() {
   };
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // Zen mode: only the document is shown. Remembered for this browser tab.
+  const [zen, setZenState] = useState(() => {
+    try {
+      return sessionStorage.getItem(ZEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setZen = (on: boolean) => {
+    setZenState(on);
+    if (on) {
+      setShowLibrary(false);
+      setShowShortcuts(false);
+    }
+    try {
+      sessionStorage.setItem(ZEN_KEY, on ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
+  const zenRef = useRef(zen);
+  zenRef.current = zen;
 
   const autosaver = useMemo(
     () =>
@@ -103,27 +128,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (settings.theme !== "system") {
-      root.setAttribute("data-theme", settings.theme);
-      return;
-    }
-    // "Theo hệ thống": e-paper screens (slow refresh or monochrome) get the
-    // e-ink theme; others follow the light/dark preference.
-    const eink = window.matchMedia?.("(update: slow), (monochrome)");
-    const apply = () => {
-      if (eink?.matches) root.setAttribute("data-theme", "eink");
-      else root.removeAttribute("data-theme");
-    };
-    apply();
-    eink?.addEventListener?.("change", apply);
-    return () => eink?.removeEventListener?.("change", apply);
+    return applyTheme(settings.theme);
   }, [settings.theme]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key === "/") {
+      if (mod && e.key === ".") {
+        e.preventDefault();
+        setZen(!zenRef.current);
+      } else if (mod && e.key === "/") {
         e.preventDefault();
         setShowShortcuts((v) => !v);
       } else if (mod && (e.key === "s" || e.key === "S")) {
@@ -202,8 +216,20 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className={zen ? "app is-zen" : "app"}>
+      {zen ? (
+        <button
+          type="button"
+          className="zen-exit"
+          onClick={() => setZen(false)}
+          title="Thoát chế độ Zen (Ctrl+.)"
+        >
+          <Shrink className="icon" aria-hidden="true" />
+          Thoát Zen
+        </button>
+      ) : null}
       <Toolbar
+        onZen={() => setZen(true)}
         savedLocally={savedLocally}
         settings={settings}
         onSettings={updateSettings}
