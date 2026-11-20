@@ -4,12 +4,12 @@ App máy tính là chính bản web MintMath, đóng gói bằng [Tauri 2](https
 
 ## Lấy file cài
 
-**Từ GitHub Actions:** workflow **Desktop apps** build trên máy Mac và máy Windows của GitHub.
-1. Actions → **Desktop apps** → mở lần chạy mới nhất. Muốn build lại bằng tay: bấm **Run workflow**.
+**Từ GitHub Actions:** workflow **Desktop apps** build trên máy Mac và máy Windows của GitHub. Hiện tạm không tự build khi có code mới, phải chạy bằng tay.
+1. Actions → **Desktop apps** → **Run workflow**, đợi chạy xong rồi mở lần chạy đó.
 2. Kéo xuống mục **Artifacts**:
    - `MintMath-macos-<số>`: file `.dmg` chạy được trên cả Mac chip Apple (M1–M4) và Mac Intel.
    - `MintMath-windows-<số>`: `MintMath_…_x64-setup.exe` (nên dùng file này) và `.msi`.
-3. Tạo tag (ví dụ `v1.0.0`) thì các file này được đưa lên mục **Releases**, có link tải cố định để gửi bạn bè.
+3. (Khi bật lại build tự động) tạo tag, ví dụ `v1.0.0`, thì các file này được đưa lên mục **Releases**, có link tải cố định để gửi bạn bè.
 
 **Tự build trên máy:** cần Node 22 và Rust (https://rustup.rs). Trên Mac cần thêm Xcode Command Line Tools: `xcode-select --install`.
 

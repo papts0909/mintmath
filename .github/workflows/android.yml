@@ -1,15 +1,14 @@
 # Build the Android app (APK) with Capacitor.
-# - Every push that touches the frontend builds an APK and attaches it to the
-#   workflow run ("Artifacts" at the bottom of the run page).
-# - Pushing a tag like v1.2.0 also publishes it as a GitHub Release.
+# Paused for now: only the PWA is published. Run it by hand when needed
+# (Actions → Android APK → Run workflow); the APK is attached to the run
+# ("Artifacts" at the bottom of the run page).
+# To turn automatic builds back on, restore under `on:`:
+#   push:
+#     paths: ["frontend/**", ".github/workflows/android.yml"]
+#     tags: ["v*"]
 name: Android APK
 
 on:
-  push:
-    paths:
-      - "frontend/**"
-      - ".github/workflows/android.yml"
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:

@@ -69,7 +69,7 @@ MintMath là PWA nên cài được thẳng từ trình duyệt và chạy đư�
 
 Có bản mới thì app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
 
-Ngoài ra còn có app cài đặt hẳn hoi, build bằng GitHub Actions:
+Ngoài ra còn có app cài đặt hẳn hoi, build bằng GitHub Actions. Hiện tạm không tự build nữa, chỉ có bản web; cần thì vào Actions bấm "Run workflow":
 
 - Android (APK, Capacitor): xem [docs/ANDROID.md](docs/ANDROID.md).
 - macOS `.dmg` và Windows `.exe`/`.msi` (Tauri): xem [docs/DESKTOP.md](docs/DESKTOP.md). App chưa ký số nên lần đầu mở sẽ bị hệ điều hành hỏi.

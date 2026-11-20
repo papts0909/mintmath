@@ -5,9 +5,9 @@ App Android là chính bản web MintMath, đóng gói bằng [Capacitor](https:
 ## Lấy file APK
 
 **Cách 1: từ GitHub Actions** (không cần cài gì)
-1. Mỗi lần có code mới trong `frontend/`, workflow **Android APK** tự build. Muốn build lại bằng tay: Actions → Android APK → Run workflow.
+1. Workflow **Android APK** hiện tạm không tự build. Muốn có APK: Actions → Android APK → Run workflow.
 2. Mở lần chạy mới nhất, kéo xuống mục **Artifacts**, tải `MintMath-apk-<số>`. Đây là file zip chứa `MintMath-<số>.apk`.
-3. Muốn có link tải cố định cho bạn bè: tạo tag, ví dụ `git tag v1.0.0 && git push origin v1.0.0`. Workflow sẽ đưa APK lên mục **Releases** của repo.
+3. (Khi bật lại build tự động) tạo tag, ví dụ `git tag v1.0.0 && git push origin v1.0.0`, thì APK được đưa lên mục **Releases** của repo, có link tải cố định cho bạn bè.
 
 **Cách 2: tự build trên máy** (cần Android Studio hoặc Android SDK, và JDK 21)
 
