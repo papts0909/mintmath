@@ -77,11 +77,13 @@ for (const composed of [false, true]) {
     await page.keyboard.press("ArrowRight");
     await compose(page, ["+", "+m", "+ma", "+mat"], { composed });
     await page.keyboard.type("5");
+    // "mat5" could still become a size ("mat5" + Space = 5×5); moving on
+    // makes it the usual 2×2 matrix with 5 in the first cell.
+    await page.keyboard.press("ArrowRight");
     expect(await first(page)).toBe(
       "\\frac12+\\begin{bmatrix}5 & \\placeholder{}\\\\ \\placeholder{} & \\placeholder{}\\end{bmatrix}",
     );
     // Typing continues normally after a composition.
-    await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");

@@ -144,6 +144,18 @@ Gõ chữ trong dòng toán sẽ tự đổi thành ký hiệu:
 | `sys` | hệ phương trình | `mat` `pat` `dat` | ma trận [ ], ( ), định thức |
 | `amat` | ma trận bổ sung có vạch dọc | | |
 
+Hệ và ma trận mặc định 2×2 (`amat` là 2×3). Muốn cỡ khác thì gõ kích thước ngay sau rồi bấm Space hoặc Tab:
+
+| Gõ | Ra |
+| --- | --- |
+| `mat3` + Space | ma trận 3×3 |
+| `mat34` hoặc `mat3x4` + Space | ma trận 3 hàng × 4 cột |
+| `sys4` + Space | hệ 4 phương trình |
+| `amat3` + Space | ma trận bổ sung 3 ẩn (3×4) |
+| `dat4` + Space | định thức 4×4 |
+
+Gõ tiếp luôn mà không bấm Space (ví dụ `amat1,1,2;…`) thì vẫn ra cỡ mặc định như trước, số vừa gõ nằm ở ô đầu. Đang gõ dở vẫn thêm được hàng, cột bằng `;` và `,`, hoặc nút +hàng, +cột trên bàn phím toán.
+
 Danh sách đủ ở `frontend/src/core/shortcuts.ts`, trong app thì bấm Ctrl+/.
 
 ## Cấu hình

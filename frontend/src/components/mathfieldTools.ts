@@ -8,6 +8,7 @@ import {
   splitCells,
   type CellLocation,
 } from "../core/matrix";
+import { parseSizedTrigger, PENDING_SIZED_RE } from "../core/shortcuts";
 
 /** Temporary caret marker. Chosen because it is rare in school maths. */
 export const PROBE_MARKER = "\\ddagger";
@@ -167,6 +168,72 @@ export function maybeAutoSubscript(mf: MathfieldElement, digit: string): boolean
 /** Number of `\\placeholder` in a LaTeX string. */
 export function countPlaceholdersIn(latex: string): number {
   return countPlaceholders(latex, latex.length);
+}
+
+/** Letters and digits just before the caret (at most `max`). */
+function trailingWord(mf: MathfieldElement, max = 12): string {
+  const pos = mf.position;
+  let word = "";
+  for (let k = 1; k <= max && pos - k >= 0; k++) {
+    const ch = mf.getValue(pos - k, pos - k + 1, "latex");
+    if (!/^[A-Za-z0-9]$/.test(ch)) break;
+    word = ch + word;
+  }
+  return word;
+}
+
+/** True while a sized structure trigger ("mat", "mat3", "mat3x") is being
+ *  typed, so digits are not turned into subscripts. */
+export function typingSizedTrigger(mf: MathfieldElement): boolean {
+  if (!mf.selectionIsCollapsed || mf.mode !== "math") return false;
+  return PENDING_SIZED_RE.test(trailingWord(mf));
+}
+
+/** Keys besides characters that end a structure trigger (moving away from
+ *  it, or starting a new line). */
+const FINISHING_KEYS = new Set([
+  "Enter",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+  "Escape",
+]);
+
+/** Called before a key goes into the field. If a structure
+ *  trigger was just typed ("sys", "amat", "mat1") and the key does not
+ *  continue a size (a digit, or "x" after a digit), insert the structure at
+ *  its usual size, put what followed the trigger ("1") in its first cell, and
+ *  let the key land after it, exactly as the instant shortcuts always did.
+ *  A size only counts when Space or Tab ends it (expandSizedStructure). */
+export function expandSizedBeforeKey(mf: MathfieldElement, key: string): boolean {
+  const finishing = key.length === 1 ? key !== " " : FINISHING_KEYS.has(key);
+  if (!finishing || !mf.selectionIsCollapsed || mf.mode !== "math") return false;
+  const word = trailingWord(mf);
+  if (/\d/.test(key) || (key === "x" && /\d$/.test(word))) return false;
+  const m = PENDING_SIZED_RE.exec(word);
+  if (!m) return false;
+  const [all, trigger, rest] = m;
+  const plain = parseSizedTrigger(trigger)!;
+  const pos = mf.position;
+  mf.selection = { ranges: [[pos - all.length, pos]], direction: "forward" };
+  mf.insert(plain.latex, { format: "latex", selectionMode: "placeholder" });
+  if (rest) mf.insert(rest, { format: "latex" });
+  return true;
+}
+
+/** On Space/Tab: replace "mat34" and the like before the caret with the
+ *  structure and select its first cell. Returns true when it did. */
+export function expandSizedStructure(mf: MathfieldElement): boolean {
+  if (!mf.selectionIsCollapsed || mf.mode !== "math") return false;
+  const found = parseSizedTrigger(trailingWord(mf));
+  if (!found) return false;
+  const pos = mf.position;
+  mf.selection = { ranges: [[pos - found.length, pos]], direction: "forward" };
+  mf.insert(found.latex, { format: "latex", selectionMode: "placeholder" });
+  return true;
 }
 
 /** If the letters just before the caret spell a shortcut trigger that MathLive

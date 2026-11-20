@@ -10,6 +10,9 @@ import { isCoarsePointer, setupVirtualKeyboard } from "./touch";
 import {
   commaInStructure,
   expandPendingShortcut,
+  expandSizedBeforeKey,
+  expandSizedStructure,
+  typingSizedTrigger,
   maybeAutoSubscript,
   semicolonInStructure,
   tabInStructure,
@@ -149,7 +152,10 @@ export default function MathLine(props: Props) {
       const el = sink();
       if (el) el.textContent = "";
       if (!text) return;
-      for (const ch of text) mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
+      for (const ch of text) {
+        expandSizedBeforeKey(mf, ch);
+        mf.executeCommand(["typedText", ch, { simulateKeystroke: true }]);
+      }
       typedLetters.current = /[A-Za-z]+$/.exec(text)?.[0] ?? "";
       if (expandPendingShortcut(mf, SHORTCUTS)) typedLetters.current = "";
       propsRef.current.onChange(fromDisplay(mf.getValue("latex")));
@@ -248,6 +254,13 @@ export default function MathLine(props: Props) {
       e.stopPropagation();
       return;
     }
+    // Any other key right after "sys", "amat1"… inserts the structure first
+    // (a size counts only when Space/Tab ends it); a typed character then
+    // lands in its first cell, as with the instant shortcuts.
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && expandSizedBeforeKey(mf, e.key)) {
+      typedLetters.current = "";
+      p.onChange(fromDisplay(mf.getValue("latex")));
+    }
     const ctx: LineKeyContext = {
       isEmpty: mf.getValue("latex").trim() === "",
       fieldUndo: (redo) => undoSkippingProbes(mf, redo),
@@ -263,7 +276,11 @@ export default function MathLine(props: Props) {
     const word = typedLetters.current;
     typedLetters.current = plain && /^[A-Za-z]$/.test(e.key) ? word + e.key : "";
     let handled = false;
-    if (plain && !e.shiftKey && (e.key === "Tab" || e.key === " ") && word) {
+    if (plain && !e.shiftKey && (e.key === "Tab" || e.key === " ") && expandSizedStructure(mf)) {
+      // "mat", "mat3", "mat34"… become the structure.
+      handled = true;
+      typedLetters.current = "";
+    } else if (plain && !e.shiftKey && (e.key === "Tab" || e.key === " ") && word) {
       const endsWithShortcut = Object.keys(SHORTCUTS).some((t) => /^[A-Za-z]+$/.test(t) && word.endsWith(t));
       if (endsWithShortcut) {
         // MathLive may already have expanded it (first cell selected): Tab/Space
@@ -278,7 +295,7 @@ export default function MathLine(props: Props) {
     else if (plain && e.key === ";") handled = semicolonInStructure(mf);
     else if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === "Tab") {
       handled = tabInStructure(mf, e.shiftKey);
-    } else if (plain && /^\d$/.test(e.key) && p.autoSubscript) {
+    } else if (plain && /^\d$/.test(e.key) && p.autoSubscript && !typingSizedTrigger(mf)) {
       handled = maybeAutoSubscript(mf, e.key);
     } else if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "z" || e.key === "Z" || e.key === "y")) {
       undoSkippingProbes(mf, e.key === "y" || e.shiftKey);
