@@ -151,9 +151,12 @@ describe("persistence", () => {
 describe("shortcuts", () => {
   it("has the required triggers", () => {
     const map = inlineShortcutMap();
-    for (const t of ["forall", "Rbb", "=>", "sys", "mat", "amat", "pat", "dat", "<=>", "iff"]) {
+    for (const t of ["forall", "Rbb", "=>", "<=>", "iff"]) {
       expect(map[t]).toBeTruthy();
     }
+    // Structures are listed too, but expanded by MintMath itself (sizes).
+    const triggers = SHORTCUTS.map((s) => s.trigger);
+    for (const t of ["sys", "mat", "amat", "pat", "dat"]) expect(triggers).toContain(t);
     expect(map.Rbb).toBe("\\mathbb{R}");
   });
 

@@ -1,15 +1,16 @@
 # Build the desktop apps with Tauri:
 #   macOS  -> MintMath_<ver>_universal.dmg (Apple Silicon + Intel)
 #   Windows -> MintMath_<ver>_x64-setup.exe and .msi
-# Files are attached to the run ("Artifacts"); tags v* also publish a Release.
+# Files are attached to the run ("Artifacts").
+# Paused for now: only the PWA is published. Run it by hand when needed
+# (Actions → Desktop apps → Run workflow). To turn automatic builds back on,
+# restore under `on:`:
+#   push:
+#     paths: ["frontend/**", ".github/workflows/desktop.yml"]
+#     tags: ["v*"]
 name: Desktop apps
 
 on:
-  push:
-    paths:
-      - "frontend/**"
-      - ".github/workflows/desktop.yml"
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:

@@ -10,6 +10,9 @@ export interface Shortcut {
   latex: string;
   label: string;
   group: ShortcutGroup;
+  /** A structure inserted on Space/Tab, with an optional size after the
+   *  trigger (see parseSizedTrigger), instead of as soon as it is typed. */
+  sized?: boolean;
 }
 
 export const SHORTCUTS: readonly Shortcut[] = [
@@ -43,16 +46,43 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { trigger: "int", latex: "\\int", label: "∫ tích phân", group: "Phép toán" },
   { trigger: "lim", latex: "\\lim_{#?}", label: "lim giới hạn", group: "Phép toán" },
 
+  // Structures take an optional size and are inserted on Space or Tab:
+  // "mat" → 2×2, "mat3" → 3×3, "mat34" or "mat3x4" → 3 rows × 4 columns.
   {
     trigger: "sys",
     latex: buildEnv("cases", 2, 1),
-    label: "Hệ phương trình (ngoặc trái)",
+    label: "Hệ phương trình. sys3 = 3 phương trình",
     group: "Cấu trúc",
+    sized: true,
   },
-  { trigger: "mat", latex: buildEnv("bmatrix", 2, 2), label: "Ma trận [ ] 2×2", group: "Cấu trúc" },
-  { trigger: "pat", latex: buildEnv("pmatrix", 2, 2), label: "Ma trận ( ) 2×2", group: "Cấu trúc" },
-  { trigger: "dat", latex: buildEnv("vmatrix", 2, 2), label: "Định thức | | 2×2", group: "Cấu trúc" },
-  { trigger: "amat", latex: buildEnv("augmented", 2, 3), label: "Ma trận bổ sung 2×3", group: "Cấu trúc" },
+  {
+    trigger: "mat",
+    latex: buildEnv("bmatrix", 2, 2),
+    label: "Ma trận [ ]. mat3 = 3×3, mat34 = 3×4",
+    group: "Cấu trúc",
+    sized: true,
+  },
+  {
+    trigger: "pat",
+    latex: buildEnv("pmatrix", 2, 2),
+    label: "Ma trận ( ). pat3 = 3×3, pat34 = 3×4",
+    group: "Cấu trúc",
+    sized: true,
+  },
+  {
+    trigger: "dat",
+    latex: buildEnv("vmatrix", 2, 2),
+    label: "Định thức | |. dat3 = 3×3",
+    group: "Cấu trúc",
+    sized: true,
+  },
+  {
+    trigger: "amat",
+    latex: buildEnv("augmented", 2, 3),
+    label: "Ma trận bổ sung [A|b]. amat3 = 3×4, amat35 = 3×5",
+    group: "Cấu trúc",
+    sized: true,
+  },
 ];
 
 export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
@@ -65,7 +95,49 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
 
 /** MathLive inline-shortcut dictionary built from SHORTCUTS. */
 export function inlineShortcutMap(): Record<string, string> {
-  return Object.fromEntries(SHORTCUTS.map((s) => [s.trigger, toDisplay(s.latex)]));
+  return Object.fromEntries(SHORTCUTS.filter((s) => !s.sized).map((s) => [s.trigger, toDisplay(s.latex)]));
+}
+
+export const MAX_STRUCTURE_SIZE = 10;
+
+const SIZED_RE = /(amat|mat|pat|dat|sys)(\d+(?:x\d+)?)?$/;
+/** A structure trigger, possibly with its size, being typed (no size check). */
+export const PENDING_SIZED_RE = /(amat|mat|pat|dat|sys)(\d*(?:x\d*)?)$/;
+
+/** The structure for text that ends with a sized trigger, e.g. "mat34".
+ *  Sizes: one digit N (N×N, N equations for sys, N unknowns for amat), two
+ *  digits RC, or RxC. Returns the LaTeX and how many characters it replaces,
+ *  or null when the text does not end with a valid one. */
+export function parseSizedTrigger(text: string): { latex: string; length: number } | null {
+  const m = SIZED_RE.exec(text);
+  if (!m) return null;
+  const [all, trigger, size = ""] = m;
+  let rows: number;
+  let cols: number | null = null;
+  if (!size) rows = 2;
+  else if (size.includes("x")) [rows, cols] = size.split("x").map(Number);
+  else if (size.length === 2) [rows, cols] = [Number(size[0]), Number(size[1])];
+  else rows = Number(size);
+  const ok = (n: number) => Number.isInteger(n) && n >= 1 && n <= MAX_STRUCTURE_SIZE;
+  let latex: string;
+  if (trigger === "sys") {
+    if (cols !== null || !ok(rows)) return null;
+    latex = buildEnv("cases", rows, 1);
+  } else if (trigger === "amat") {
+    // One digit = number of unknowns (plus the right-hand side column).
+    const c = cols ?? rows + 1;
+    if (!ok(rows) || !ok(c) || c < 2) return null;
+    latex = buildEnv("augmented", rows, c);
+  } else if (trigger === "dat") {
+    if (cols !== null && cols !== rows) return null; // a determinant is square
+    if (!ok(rows)) return null;
+    latex = buildEnv("vmatrix", rows, rows);
+  } else {
+    const c = cols ?? rows;
+    if (!ok(rows) || !ok(c)) return null;
+    latex = buildEnv(trigger === "mat" ? "bmatrix" : "pmatrix", rows, c);
+  }
+  return { latex: toDisplay(latex), length: all.length };
 }
 
 export function searchShortcuts(query: string): Shortcut[] {
