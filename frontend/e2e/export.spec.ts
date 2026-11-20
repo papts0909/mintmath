@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { freshPage } from "./helpers";
+import { exportAs, freshPage } from "./helpers";
 import { typeSample } from "./sampleSteps";
 
 async function loadDoc(page: Page, lines: { id: string; type: string; content: string }[], title = "") {
@@ -19,28 +19,19 @@ test.beforeEach(async ({ page }) => {
 test("exports the typed sample as .tex and a valid PDF", async ({ page }) => {
   await typeSample(page);
 
-  const [texDl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "LaTeX", exact: true }).click(),
-  ]);
+  const [texDl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "LaTeX (.tex)")]);
   const tex = readFileSync((await texDl.path())!, "utf-8");
   expect(tex).toContain("\\section*{Giải và biện luận hệ phương trình}");
   expect(tex).toContain("\\left[\\begin{array}{ccc|c}1 & 1 & 2 & 3");
   expect(tex).toContain("\\begin{align*}");
 
   const started = Date.now();
-  const [pdfDl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "PDF", exact: true }).click(),
-  ]);
+  const [pdfDl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "PDF")]);
   const pdf = readFileSync((await pdfDl.path())!);
   expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
   expect(Date.now() - started).toBeLessThan(5000);
 
-  const [pngDl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "PNG", exact: true }).click(),
-  ]);
+  const [pngDl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "PNG")]);
   const png = readFileSync((await pngDl.path())!);
   expect(png.subarray(1, 4).toString()).toBe("PNG");
 });
@@ -50,9 +41,9 @@ test("a forbidden command is rejected and its line is highlighted", async ({ pag
     { id: "a", type: "math", content: "x+1" },
     { id: "b", type: "math", content: "\\input{/etc/passwd}" },
   ]);
-  await page.getByRole("button", { name: "PDF", exact: true }).click();
+  await exportAs(page, "PDF");
   await expect(page.locator("[data-testid=line]").nth(1)).toHaveClass(/has-error/);
-  await expect(page.locator(".export-menu .status.error")).toContainText("dòng 2");
+  await expect(page.locator(".export-status.error")).toContainText("dòng 2");
 });
 
 test("a LaTeX error highlights the offending line", async ({ page }) => {
@@ -61,7 +52,7 @@ test("a LaTeX error highlights the offending line", async ({ page }) => {
     { id: "b", type: "math", content: "x" },
     { id: "c", type: "math", content: "\\nosuchmacro{1}" },
   ]);
-  await page.getByRole("button", { name: "PDF", exact: true }).click();
+  await exportAs(page, "PDF");
   await expect(page.locator("[data-testid=line]").nth(2)).toHaveClass(/has-error/);
   await expect(page.locator(".line-error")).toBeVisible();
   // Editing the offending line clears its highlight.
@@ -74,7 +65,7 @@ test("a LaTeX error highlights the offending line", async ({ page }) => {
 
 test("print preview shows the PDF in the page", async ({ page }) => {
   await page.keyboard.type("x^2");
-  await page.getByRole("button", { name: "Xem trước" }).click();
+  await exportAs(page, "Xem trước bản in");
   await expect(page.getByRole("dialog", { name: "Xem trước bản in" })).toBeVisible();
   await expect(page.locator(".preview iframe")).toHaveAttribute("src", /^blob:/);
   await page.getByRole("button", { name: "Đóng", exact: true }).click();

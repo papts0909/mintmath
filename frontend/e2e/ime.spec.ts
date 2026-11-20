@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { freshPage, readLines } from "./helpers";
+import { freshPage, menu, readLines } from "./helpers";
 
 const first = async (page: Page) => (await readLines(page))[0].content;
 
@@ -93,11 +93,8 @@ for (const composed of [false, true]) {
 }
 
 test("with the IME fix switched off, MathLive handles composition itself", async ({ page }) => {
-  await page.getByText("Cài đặt").click();
-  await page.getByLabel(/Sửa bộ gõ TV/).uncheck();
-  // Esc closes the settings menu that floats over the editor.
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("group", { name: "Cài đặt" })).toBeHidden();
+  await menu(page, "Công cụ", "Sửa bộ gõ tiếng Việt (Telex/VNI) trong dòng toán");
+  await expect(page.getByRole("menu")).toHaveCount(0);
   await page.locator("math-field").first().click();
   await compose(page, ["x"], { composed: true });
   await page.keyboard.type("+1");

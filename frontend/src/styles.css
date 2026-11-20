@@ -481,8 +481,7 @@ kbd {
 @media (max-width: 640px) {
   .toolbar {
     padding: 6px 8px;
-    /* Scrolls away on phones; the line-action bar stays pinned instead. */
-    position: static;
+    gap: 4px;
   }
   .workspace {
     padding: 8px 4px;
@@ -582,28 +581,7 @@ kbd {
   max-width: 320px;
 }
 
-.touch-bar {
-  display: none;
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  padding: 6px 8px;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.touch-bar button {
-  flex: 0 0 auto;
-  min-height: 40px;
-  min-width: 40px;
-}
 @media (pointer: coarse) {
-  .touch-bar {
-    display: flex;
-  }
   button,
   select {
     min-height: 36px;
@@ -703,62 +681,6 @@ kbd {
   content: "Đang gõ: ";
   font-weight: 400;
   opacity: 0.8;
-}
-
-.settings-menu {
-  position: relative;
-}
-.settings-menu > summary {
-  list-style: none;
-  cursor: pointer;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-}
-.settings-menu > summary::-webkit-details-marker {
-  display: none;
-}
-.settings-menu[open] > summary {
-  border-color: var(--accent);
-}
-.settings-panel {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 6px);
-  left: 0;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
-/* Above the sticky touch bar while the menu is open. */
-.toolbar:has(.settings-menu[open]) {
-  z-index: 20;
-}
-/* Phones: the menu spans the toolbar's width instead of hanging off-screen. */
-@media (max-width: 640px) {
-  .settings-menu {
-    position: static;
-  }
-  .settings-panel {
-    left: 8px;
-    right: 8px;
-    top: auto;
-    margin-top: 6px;
-    min-width: 0;
-  }
-}
-.settings-panel label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
 }
 
 .status-bar {
@@ -1102,7 +1024,6 @@ button.cta:hover:not(:disabled) {
 :root[data-theme^="eink"] select,
 :root[data-theme^="eink"] input,
 :root[data-theme^="eink"] .side-panel,
-:root[data-theme^="eink"] .settings-panel,
 :root[data-theme^="eink"] .preview,
 :root[data-theme^="eink"] .ime-preview,
 :root[data-theme^="eink"] .toast,
@@ -1112,7 +1033,8 @@ button.cta:hover:not(:disabled) {
   border-color: var(--text);
 }
 /* No hover tint: e-ink screens are touched, and repaints ghost. */
-:root[data-theme^="eink"] button:not(.primary):not(.cta):hover:not(:disabled),
+:root[data-theme^="eink"]
+  button:not(.primary):not(.cta):not(.menu-item):not(.dropdown-trigger):hover:not(:disabled),
 :root[data-theme^="eink"] .line:hover,
 :root[data-theme^="eink"] .doc-tab:not(.is-active):hover,
 :root[data-theme^="eink"] .doc-tab-close:hover,
@@ -1226,7 +1148,6 @@ button.cta:hover:not(:disabled) {
 /* ---------- Zen mode: only the document ---------- */
 .app.is-zen .toolbar,
 .app.is-zen .tab-bar,
-.app.is-zen .touch-bar,
 .app.is-zen .status-bar,
 .app.is-zen .side-panel {
   display: none !important;
@@ -1256,4 +1177,316 @@ button.cta:hover:not(:disabled) {
   .zen-exit {
     display: none;
   }
+}
+
+/* ---------- menu bar, drop-down menus, icon toolbar ---------- */
+.command-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.menubar {
+  display: flex;
+  gap: 2px;
+  margin: 0 0 0 -6px;
+}
+.menubar .dropdown-trigger {
+  border: none;
+  background: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.menubar .dropdown-trigger:hover,
+.menubar .dropdown-trigger[aria-expanded="true"] {
+  background: var(--accent-soft);
+}
+.dropdown {
+  position: relative;
+  display: inline-flex;
+}
+.menu-popup {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 16px));
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  font-family: var(--ui-font);
+}
+.menu-popup.flip {
+  left: auto;
+  right: 0;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
+  border-radius: 5px;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 400;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+.menu-item:hover:not(:disabled),
+.menu-item:focus-visible,
+.menu-item[aria-expanded="true"] {
+  background: var(--accent-soft);
+  outline: none;
+}
+.menu-item:disabled {
+  color: var(--muted);
+}
+.menu-icon {
+  flex: 0 0 18px;
+  display: inline-flex;
+  justify-content: center;
+}
+.menu-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-shortcut {
+  font-family: var(--ui-font);
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-left: 16px;
+}
+.menu-chevron {
+  color: var(--muted);
+}
+.menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+.menu-sub-wrap {
+  position: relative;
+}
+.menu-child {
+  top: -5px;
+  left: calc(100% + 2px);
+}
+.menu-child.flip {
+  left: auto;
+  right: calc(100% + 2px);
+}
+.menu-panel {
+  min-width: 0;
+  padding: 10px;
+}
+
+.tools-row {
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.icon-toolbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tb-slot {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.tb-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px 0 0;
+  background: var(--border);
+}
+.tb-btn,
+.tb-dropdown > .dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  min-width: 34px;
+  justify-content: center;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+.tb-chevron {
+  width: 0.85em;
+  height: 0.85em;
+  margin-left: -2px;
+  opacity: 0.7;
+}
+.icon-toolbar-mirror {
+  /* Off-screen, so it never widens the page. */
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+.icon-toolbar-mirror > span {
+  border: 1px solid transparent;
+  font-family: var(--ui-font);
+  font-weight: 500;
+}
+.export-status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matrix-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.matrix-kinds {
+  display: flex;
+  gap: 4px;
+}
+.matrix-kinds button {
+  flex: 1;
+  padding: 3px 6px;
+  font-family: "DejaVu Serif", Georgia, serif;
+}
+.matrix-kinds button[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.matrix-grid {
+  display: grid;
+  gap: 3px;
+}
+.matrix-grid button {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border-radius: 3px;
+  background: var(--bg);
+}
+.matrix-grid button.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.matrix-size {
+  margin: 0;
+  text-align: center;
+  font-family: var(--ui-font);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  /* Phones: "Menu" and the icon toolbar share one row. */
+  .command-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  .command-bar .tools-row {
+    flex: 1;
+    min-width: 0;
+  }
+  .menubar {
+    margin: 0;
+  }
+  .menubar.is-narrow .dropdown-trigger {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    padding: 4px 8px;
+    min-height: 34px;
+  }
+  .export-status {
+    display: none;
+  }
+  /* Submenus open below their item instead of to the side. */
+  .menu-sub-wrap .menu-child {
+    position: static;
+    box-shadow: none;
+    border: none;
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+    margin: 0 0 4px 16px;
+    min-width: 0;
+  }
+  .cloud .cta-label,
+  .zen-toggle span,
+  .save-state,
+  .brand-word {
+    display: none;
+  }
+  /* Logo, title, B2 and Zen on one line. */
+  .toolbar > .toolbar-row:first-child {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .toolbar > .toolbar-row:first-child .title-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1rem;
+  }
+}
+@media (pointer: coarse) {
+  /* No Ctrl keys on a touch screen. */
+  .menu-shortcut {
+    display: none;
+  }
+  .tb-btn,
+  .tb-dropdown > .dropdown-trigger {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  .menu-item {
+    padding: 10px 10px;
+  }
+}
+
+:root[data-theme^="eink"] .menu-popup {
+  border: 2px solid var(--text);
+}
+:root[data-theme^="eink"] .menu-item,
+:root[data-theme^="eink"] .menu-item:disabled,
+:root[data-theme^="eink"] .menubar:not(.is-narrow) .dropdown-trigger {
+  border: none;
+}
+:root[data-theme^="eink"] .menu-item:hover:not(:disabled),
+:root[data-theme^="eink"] .menu-item:focus-visible,
+:root[data-theme^="eink"] .menu-item[aria-expanded="true"],
+:root[data-theme^="eink"] .menubar .dropdown-trigger[aria-expanded="true"] {
+  background: var(--text);
+  color: var(--bg);
+}
+:root[data-theme^="eink"] .menu-item:hover:not(:disabled) .menu-shortcut,
+:root[data-theme^="eink"] .menu-item:focus-visible .menu-shortcut {
+  color: var(--bg);
+}
+:root[data-theme^="eink"] .menu-sep,
+:root[data-theme^="eink"] .tb-sep {
+  background: var(--text);
+}
+:root[data-theme^="eink"] .matrix-grid button.is-on {
+  background: var(--text);
 }

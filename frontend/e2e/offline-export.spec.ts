@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { freshPage } from "./helpers";
+import { exportAs, freshPage } from "./helpers";
 import { typeSample } from "./sampleSteps";
 
 // The export server is unreachable (offline, or static hosting without backend).
@@ -11,10 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test("LaTeX is built on the device and matches the server output", async ({ page }) => {
   await typeSample(page);
-  const [dl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "LaTeX", exact: true }).click(),
-  ]);
+  const [dl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "LaTeX (.tex)")]);
   const tex = readFileSync((await dl.path())!, "utf-8");
   expect(tex).toContain("\\section*{Giải và biện luận hệ phương trình}");
   expect(tex).toContain("\\left[\\begin{array}{ccc|c}1 & 1 & 2 & 3");
@@ -23,10 +20,7 @@ test("LaTeX is built on the device and matches the server output", async ({ page
 
 test("PNG is rendered on the device", async ({ page }) => {
   await typeSample(page);
-  const [dl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "PNG", exact: true }).click(),
-  ]);
+  const [dl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "PNG")]);
   const png = readFileSync((await dl.path())!);
   expect(png.subarray(1, 4).toString()).toBe("PNG");
   // A4-width layout at 2x: 794 px * 2
@@ -43,8 +37,8 @@ test("PDF falls back to the print dialog with a printable layout", async ({ page
     };
   });
   await typeSample(page);
-  await page.getByRole("button", { name: "PDF", exact: true }).click();
-  await expect(page.locator(".export-menu .status")).toContainText("Lưu thành PDF");
+  await exportAs(page, "PDF");
+  await expect(page.locator(".export-status")).toContainText("Lưu thành PDF");
   await expect.poll(() => page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(1);
   const root = page.locator("#print-root");
   await expect(root.locator("h1")).toHaveText("Giải và biện luận hệ phương trình");
@@ -69,6 +63,6 @@ test("forbidden commands are still caught offline", async ({ page }) => {
       }),
     ),
   });
-  await page.getByRole("button", { name: "LaTeX", exact: true }).click();
+  await exportAs(page, "LaTeX (.tex)");
   await expect(page.locator("[data-testid=line]").first()).toHaveClass(/has-error/);
 });

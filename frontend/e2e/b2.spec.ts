@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { docKeys, FAKE_B2, installFakeB2, textOf, type FakeBucket } from "./fakeB2";
-import { freshPage, readLines } from "./helpers";
+import { exportAs, freshPage, readLines } from "./helpers";
 
 async function start(page: Page, bucket: FakeBucket) {
   await installFakeB2(page, bucket);
@@ -47,11 +47,11 @@ test("connect with your own key: validation, wrong key, then success", async ({ 
 
   await connect(page);
   await expect(panel(page).getByText(`Đã kết nối bucket ${FAKE_B2.bucket}.`)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Lưu lên B2", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lưu B2", exact: true })).toBeVisible();
 
   // The connection is remembered on this device.
   await page.reload();
-  await expect(page.getByRole("button", { name: "Lưu lên B2", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lưu B2", exact: true })).toBeVisible();
 });
 
 test("save with Ctrl+S, rename, open on another device, sync both ways", async ({ page, browser }) => {
@@ -73,7 +73,7 @@ test("save with Ctrl+S, rename, open on another device, sync both ways", async (
 
   // Renaming replaces the object instead of leaving a stale copy.
   await page.locator(".title-input").fill("Bài 1 sửa");
-  await page.getByRole("button", { name: "Lưu lên B2", exact: true }).click();
+  await page.getByRole("button", { name: "Lưu B2", exact: true }).click();
   await expect.poll(() => docKeys(bucket)).toEqual([key1.replace("Bai-1__", "Bai-1-sua__")]);
 
   // Another device: connect, open from B2.
@@ -170,7 +170,7 @@ test("other files: upload, export .tex + PDF, import .tex, download, delete, dis
   expect(readFileSync((await dl.path())!, "utf-8")).toContain("\\int_0^1");
 
   await page.route(/\/api\/export\//, (r) => r.abort("internetdisconnected"));
-  await page.getByRole("button", { name: "B2", exact: true }).click();
+  await exportAs(page, "Lưu .tex và PDF lên B2");
   await expect
     .poll(() => [...bucket.keys()].sort())
     .toEqual(expect.arrayContaining(["mintmath/de-thi.tex", "mintmath/Đề_thi.tex", "mintmath/Đề_thi.pdf"]));

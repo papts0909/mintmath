@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { freshPage, readLines } from "./helpers";
+import { exportAs, freshPage, menu, readLines } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
@@ -21,12 +21,12 @@ test("documents are kept in the library; switch, search, duplicate, delete", asy
   await page.locator(".title-input").fill("Bài A");
   await page.locator("math-field").first().click();
   await page.keyboard.type("a^2");
-  await page.getByRole("button", { name: "Tài liệu mới" }).click();
+  await menu(page, "Tệp", "Bài mới (tab mới)");
   await page.locator(".title-input").fill("Bài B");
   await page.locator("math-field").first().click();
   await page.keyboard.type("b+1");
 
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   const lib = library(page);
   await expect(lib.getByTestId("library-item")).toHaveCount(2);
   await expect(lib.getByTestId("library-item").first()).toContainText("Bài B");
@@ -39,7 +39,7 @@ test("documents are kept in the library; switch, search, duplicate, delete", asy
   expect((await readLines(page))[0].content).toBe("a^2");
 
   // B was saved when we switched away.
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   await lib.getByRole("button", { name: "Nhân bản Bài B" }).click();
   await expect(lib.getByTestId("library-item")).toHaveCount(3);
   await expect(lib.getByText("Bài B (bản sao)")).toBeVisible();
@@ -49,7 +49,7 @@ test("documents are kept in the library; switch, search, duplicate, delete", asy
 
   // Survives a reload.
   await page.reload();
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   await expect(library(page).getByTestId("library-item")).toHaveCount(2);
 });
 
@@ -78,7 +78,7 @@ Vậy $S=\{(2;-1)\}$.
     { type: "math", content: "y &= -1", joinPrev: true },
     { type: "math", content: "\\text{Vậy }S=\\{(2;-1)\\}\\text{.}" },
   ]);
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   await expect(library(page).getByText("Bài tập nhập")).toBeVisible();
 });
 
@@ -88,11 +88,8 @@ test("exported .tex imports back to the same document", async ({ page }) => {
   await page.keyboard.press("Control+'");
   await page.keyboard.type("Kết luận: đúng 100%");
   const before = await readLines(page);
-  const [dl] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "LaTeX", exact: true }).click(),
-  ]);
-  await page.getByRole("button", { name: "Tài liệu mới" }).click();
+  const [dl] = await Promise.all([page.waitForEvent("download"), exportAs(page, "LaTeX (.tex)")]);
+  await menu(page, "Tệp", "Bài mới (tab mới)");
   await page.getByTestId("open-file").setInputFiles(await dl.path());
   await expect.poll(() => readLines(page)).toEqual(before);
 });
@@ -101,7 +98,7 @@ test("backup and restore the whole library", async ({ page, browser }) => {
   await page.locator(".title-input").fill("Sao lưu 1");
   await page.locator("math-field").first().click();
   await page.keyboard.type("z");
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   const [dl] = await Promise.all([
     page.waitForEvent("download"),
     library(page).getByRole("button", { name: "Sao lưu", exact: true }).click(),
@@ -112,7 +109,7 @@ test("backup and restore the whole library", async ({ page, browser }) => {
 
   const other = await (await browser.newContext()).newPage();
   await other.goto("/");
-  await other.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(other, "Tệp", "Thư viện");
   await library(other)
     .getByTestId("library-import")
     .setInputFiles(await dl.path());

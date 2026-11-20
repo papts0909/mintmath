@@ -75,12 +75,15 @@ Bản web tự đưa lên GitHub Pages mỗi khi `frontend/` trên `main` thay �
 
 ## Dùng app
 
+Thanh công cụ giống Google Sheets: hàng trên là menu chữ (Tệp, Chỉnh sửa, Chèn, Dòng, Xem, Công cụ), hàng dưới là các nút hay dùng nhất. Nút nào không đủ chỗ thì nằm trong "⋯". Trên điện thoại cả thanh menu gom vào một nút "Menu". Bấm F10 để đưa bàn phím lên thanh menu, rồi đi bằng các phím mũi tên.
+
 - **Tab**: mở nhiều bài cùng lúc, mỗi bài một tab. Đóng tab không mất bài, bài vẫn nằm trong Thư viện.
 - **Thư viện**: bài nào đang viết cũng tự lưu vào thư viện trên máy (IndexedDB). Tìm theo tiêu đề hoặc nội dung, nhân bản, xóa. "Sao lưu" tải cả thư viện về một tệp `.json` để chuyển sang máy khác.
-- **Mở tệp** nhận `.mintmath.json`, bản sao lưu, và `.tex`. File `.tex` do MintMath xuất ra thì mở lại y nguyên. File LaTeX viết tay cũng đọc được phần lớn: tiêu đề, đoạn văn, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline`, `itemize`, `enumerate`.
-- **Giao diện**: mặc định là kiểu "Giấy", chỉ đen trắng giống máy đọc sách, sáng hay tối theo cài đặt của máy. Muốn có màu thì chọn trong ⚙ Cài đặt.
+- **Tệp ▸ Mở tệp** nhận `.mintmath.json`, bản sao lưu, và `.tex`. File `.tex` do MintMath xuất ra thì mở lại y nguyên. File LaTeX viết tay cũng đọc được phần lớn: tiêu đề, đoạn văn, `\[ \]`, `$$ $$`, `equation`, `align`, `gather`, `multline`, `itemize`, `enumerate`.
+- **Giao diện**: mặc định là kiểu "Giấy", chỉ đen trắng giống máy đọc sách, sáng hay tối theo cài đặt của máy. Muốn có màu thì chọn trong Xem ▸ Giao diện.
 - **Zen** (Ctrl+.): ẩn hết nút, chỉ chừa phần làm toán.
-- Trên màn cảm ứng, bấm vào dòng toán sẽ hiện bàn phím toán, có tab riêng MintMath với các ký hiệu hay dùng (∀ ∃ ⇒ ∈ ℝ…), hệ phương trình, ma trận, [A|b]. Thanh nút ở trên thay cho các phím tắt: thêm dòng, đổi loại, đưa lên/xuống, xóa, hoàn tác.
+- **Chèn**: hệ phương trình theo số phương trình, ma trận chọn kích thước trên lưới (như chèn bảng), phân số, căn, mũ, chỉ số, ký hiệu. Chèn vào đúng chỗ con trỏ đang đứng.
+- Trên màn cảm ứng, bấm vào dòng toán sẽ hiện bàn phím toán, có tab riêng MintMath với các ký hiệu hay dùng (∀ ∃ ⇒ ∈ ℝ…), hệ phương trình, ma trận, [A|b]. Thêm dòng, đổi loại, đưa lên/xuống, xóa, hoàn tác nằm trên thanh nút và trong "⋯".
 
 Xuất file:
 
@@ -96,9 +99,9 @@ Ai dùng thì tự tạo tài khoản B2 của mình (10 GB đầu miễn phí),
 
 Kết nối rồi thì có:
 
-- "Lưu lên B2" (Ctrl+S), và mở bài từ B2 trên máy khác.
-- "Đồng bộ thư viện" hai chiều giữa máy và B2. Đồng bộ không bao giờ xóa. Bài bị sửa ở cả hai nơi thì giữ cả hai bản.
-- Tải tệp bất kỳ lên/xuống. Nút "B2" trong nhóm Xuất lưu luôn bản `.tex` và PDF.
+- "Lưu B2" trên thanh công cụ (Ctrl+S), và mở bài từ B2 trên máy khác.
+- "Đồng bộ thư viện" (Tệp ▸ Backblaze B2) hai chiều giữa máy và B2. Đồng bộ không bao giờ xóa. Bài bị sửa ở cả hai nơi thì giữ cả hai bản.
+- Tải tệp bất kỳ lên/xuống. Xuất ▸ "Lưu .tex và PDF lên B2" lưu luôn hai bản đó.
 
 Bản web cần bật CORS cho bucket một lần. Khi thiếu, app sẽ đưa sẵn lệnh để chép vào Terminal hoặc PowerShell, không cần cài gì thêm. Chi tiết trong [docs/B2.md](docs/B2.md).
 
@@ -119,9 +122,11 @@ Phần B2 mới chạy với B2 giả trong test. Ai dùng tài khoản thật m
 | `,` trong ma trận | Sang cột kế, cuối hàng thì thêm cột (trong hệ phương trình là dấu phẩy thường) |
 | `;` trong ma trận, hệ | Sang hàng kế, hoặc thêm hàng |
 | Tab trong ma trận | Sang ô kế |
-| `/` `^` `_` | Phân số, mũ, chỉ số dưới. Gõ `d1` thành `d₁` (tắt được trong Cài đặt) |
+| `/` `^` `_` | Phân số, mũ, chỉ số dưới. Gõ `d1` thành `d₁` (tắt được trong menu Công cụ) |
 | Ctrl+S | Lưu lên B2 (chưa kết nối thì mở form kết nối) |
+| Ctrl+P | In bài (bố cục in, không phải màn hình soạn) |
 | Ctrl+. | Bật/tắt Zen |
+| F10 | Lên thanh menu |
 | Ctrl+/ | Bảng lệnh tắt |
 | Bấm số dòng, Shift+bấm | Chọn một hay nhiều dòng để chép hoặc xóa. Kéo số dòng để đổi thứ tự |
 

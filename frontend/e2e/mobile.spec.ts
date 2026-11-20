@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { readLines } from "./helpers";
+import { menu, menuItem, readLines } from "./helpers";
 
 test("touch layout: action bar, on-screen math keyboard with MintMath keys", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  const bar = page.getByRole("toolbar", { name: "Thao tác dòng" });
+  const bar = page.getByRole("toolbar", { name: "Công cụ soạn" });
   await expect(bar).toBeVisible();
 
   // Tapping the math line opens MathLive's keyboard on a touch device.
@@ -22,9 +22,12 @@ test("touch layout: action bar, on-screen math keyboard with MintMath keys", asy
   await bar.getByRole("button", { name: "Thêm dòng chữ" }).tap();
   await expect(page.locator("textarea.text-line")).toBeFocused();
   await page.keyboard.type("Ghi chú");
-  await bar.getByRole("button", { name: "Đưa dòng lên" }).tap();
+  // Less common commands are in "⋯".
+  await bar.getByRole("button", { name: "Thêm lệnh" }).tap();
+  await menuItem(page, "Đưa dòng lên").tap();
   expect((await readLines(page)).map((l) => l.type)).toEqual(["text", "math"]);
-  await bar.getByRole("button", { name: "Hoàn tác" }).tap();
+  await bar.getByRole("button", { name: "Thêm lệnh" }).tap();
+  await menuItem(page, "Hoàn tác").tap();
   expect((await readLines(page)).map((l) => l.type)).toEqual(["math", "text"]);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -32,16 +35,27 @@ test("touch layout: action bar, on-screen math keyboard with MintMath keys", asy
   await page.screenshot({ path: "test-results/mobile.png" });
 });
 
-test("touch layout: the settings menu fits on the screen", async ({ page }) => {
+test("touch layout: one Menu button; menus fit on the screen and work", async ({ page }) => {
   await page.goto("/");
-  await page.getByText("Cài đặt").tap();
-  const panel = page.getByRole("group", { name: "Cài đặt" });
-  await expect(panel).toBeVisible();
-  const box = (await panel.boundingBox())!;
+  await expect(page.getByRole("menubar")).toHaveCount(0);
+  await page.getByRole("button", { name: "Menu", exact: true }).tap();
+  const top = page.getByRole("menu", { name: "Menu" });
+  await expect(top).toBeVisible();
   const vw = page.viewportSize()!.width;
+  const box = (await top.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(vw);
-  // Nothing covers it: the theme picker can be used.
-  await panel.getByLabel("Giao diện").selectOption({ label: "Giấy tối" });
+  // Submenus open below their item.
+  await menuItem(page, "Xem").tap();
+  await menuItem(page, "Giao diện").tap();
+  await menuItem(page, "Giấy tối").tap();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "eink-dark");
+  // The "⋯" menu stays on screen too.
+  await page.getByRole("button", { name: "Thêm lệnh" }).tap();
+  const more = (await page.getByRole("menu", { name: "Thêm lệnh" }).boundingBox())!;
+  expect(more.x).toBeGreaterThanOrEqual(0);
+  expect(more.x + more.width).toBeLessThanOrEqual(vw + 1);
+  await page.keyboard.press("Escape");
+  await menu(page, "Chèn", "Phân số");
+  await expect.poll(async () => (await readLines(page))[0].content).toContain("\\frac");
 });

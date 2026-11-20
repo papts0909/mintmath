@@ -67,3 +67,33 @@ export async function waitSaved(page: Page): Promise<void> {
     .toEqual(shown);
   await expect(page.locator(".save-state")).toHaveText("Đã lưu");
 }
+
+/** Open a menu path, e.g. menu(page, "Tệp", "Xuất", "PDF"), on the menu bar
+ *  (wide screens) or the single "Menu" button (phones). The last item is
+ *  clicked. */
+export async function menu(page: Page, ...path: string[]): Promise<void> {
+  const bar = page.getByRole("menubar", { name: "Menu chính" });
+  if (await bar.isVisible()) {
+    await bar.getByRole("menuitem", { name: path[0], exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    await menuItem(page, path[0]).click();
+  }
+  for (const name of path.slice(1)) await menuItem(page, name).click();
+}
+
+/** A visible menu item by its exact name, whatever its kind. */
+export function menuItem(page: Page, name: string) {
+  return page
+    .getByRole("menuitem", { name, exact: true })
+    .or(page.getByRole("menuitemcheckbox", { name, exact: true }))
+    .or(page.getByRole("menuitemradio", { name, exact: true }))
+    .last();
+}
+
+/** Export through the toolbar's "Xuất" button: "LaTeX (.tex)", "PDF", "PNG",
+ *  "Xem trước bản in", "In", "Lưu .tex và PDF lên B2". */
+export async function exportAs(page: Page, item: string): Promise<void> {
+  await page.getByRole("toolbar", { name: "Công cụ soạn" }).getByRole("button", { name: "Xuất" }).click();
+  await menuItem(page, item).click();
+}

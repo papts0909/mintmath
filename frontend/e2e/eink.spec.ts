@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { freshPage } from "./helpers";
+import { freshPage, menu } from "./helpers";
 
 const css = (page: Page, sel: string, prop: string) =>
   page
@@ -8,9 +8,7 @@ const css = (page: Page, sel: string, prop: string) =>
     .evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
 async function pickTheme(page: Page, label: string) {
-  await page.getByText("Cài đặt").click();
-  await page.getByLabel("Giao diện").selectOption({ label });
-  await page.keyboard.press("Escape");
+  await menu(page, "Xem", "Giao diện", label);
 }
 
 test.beforeEach(async ({ page }) => freshPage(page));
@@ -33,7 +31,11 @@ test("e-ink theme: black on white, thick focus frame, no shadows or transitions"
   expect(await line.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("2px");
   expect(await line.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("inset");
   expect(await css(page, "button", "transition-duration")).toBe("0s");
-  expect(await css(page, ".settings-panel", "box-shadow")).toBe("none");
+  // Menus: black frame, no shadow.
+  await page.getByRole("menuitem", { name: "Tệp", exact: true }).click();
+  expect(await css(page, ".menu-popup", "box-shadow")).toBe("none");
+  expect(await css(page, ".menu-popup", "border-top-width")).toBe("2px");
+  await page.keyboard.press("Escape");
 
   // Kept after a reload.
   await page.reload();
@@ -62,8 +64,9 @@ test("by default the e-ink theme follows the device's light/dark setting", async
 test("Zen mode shows only the document; Ctrl+. or the button brings the rest back", async ({ page }) => {
   await page.keyboard.type("x^2");
   await page.getByRole("button", { name: "Zen", exact: true }).click();
-  for (const name of ["Thư viện", "Kết nối Backblaze B2", "Cài đặt"])
-    await expect(page.getByRole("button", { name, exact: true })).toBeHidden();
+  await expect(page.getByRole("menubar", { name: "Menu chính" })).toBeHidden();
+  await expect(page.getByRole("toolbar", { name: "Công cụ soạn" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Kết nối Backblaze B2", exact: true })).toBeHidden();
   await expect(page.locator(".toolbar")).toBeHidden();
   await expect(page.locator(".tab-bar")).toBeHidden();
   await expect(page.locator(".status-bar")).toBeHidden();
