@@ -1,6 +1,5 @@
 // Service worker registration and the "install app" prompt.
 import { create } from "zustand";
-import { isNativeApp } from "./native";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -18,10 +17,9 @@ export const usePwa = create<PwaState>()(() => ({
   online: typeof navigator === "undefined" ? true : navigator.onLine,
   installEvent: null,
   installed:
-    isNativeApp() ||
-    (typeof window !== "undefined" &&
-      (window.matchMedia?.("(display-mode: standalone)").matches ||
-        (navigator as Navigator & { standalone?: boolean }).standalone === true)),
+    typeof window !== "undefined" &&
+    (window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true),
   updateReady: false,
 }));
 
@@ -46,7 +44,7 @@ export function setupPwa(): void {
   });
   window.addEventListener("appinstalled", () => usePwa.setState({ installed: true, installEvent: null }));
 
-  if (import.meta.env.PROD && "serviceWorker" in navigator && !isNativeApp()) {
+  if (import.meta.env.PROD && "serviceWorker" in navigator) {
     void import("virtual:pwa-register").then(({ registerSW }) => {
       registerSW({
         immediate: true,

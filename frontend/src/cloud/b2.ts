@@ -112,7 +112,7 @@ export function createB2Client(cfg: B2Config, fetchImpl: FetchLike) {
   const objectUrl = (key: string) => `${base}/${key.split("/").map(encodeURIComponent).join("/")}`;
 
   /** Sign, then send with the platform's fetch (plain url + init, which every
-   *  fetch implementation accepts, including Tauri's and Capacitor's). */
+   *  fetch implementation accepts). */
   async function send(method: string, url: string, body?: BodyInit, headers: Record<string, string> = {}) {
     const signed = await aws.sign(url, { method, body, headers });
     const signedHeaders: Record<string, string> = {};

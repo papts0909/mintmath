@@ -21,7 +21,6 @@ import { putDoc, requestPersistentStorage } from "./core/library";
 import { receiveNewerDoc, restoreTabs } from "./core/tabs";
 import { applyTheme } from "./core/theme";
 import type { Doc } from "./core/types";
-import { isNativeApp } from "./native";
 
 let persistAsked = false;
 const ZEN_KEY = "mathpad.zen.v1";
@@ -159,26 +158,6 @@ export default function App() {
     const t = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(t);
   }, [toast]);
-
-  // Android back button: close an open panel first, then leave the app.
-  const panelsOpen = useRef({ library: false, shortcuts: false });
-  panelsOpen.current = { library: showLibrary, shortcuts: showShortcuts };
-  useEffect(() => {
-    if (!isNativeApp()) return;
-    let remove: (() => void) | undefined;
-    void import("@capacitor/app").then(({ App: CapApp }) =>
-      CapApp.addListener("backButton", () => {
-        const kbd = window.mathVirtualKeyboard;
-        if (kbd?.visible) kbd.hide();
-        else if (panelsOpen.current.library) setShowLibrary(false);
-        else if (panelsOpen.current.shortcuts) setShowShortcuts(false);
-        else void CapApp.exitApp();
-      }).then((h) => {
-        remove = () => void h.remove();
-      }),
-    );
-    return () => remove?.();
-  }, []);
 
   // Keep the focused line above MathLive's on-screen keyboard (touch devices).
   useEffect(() => {

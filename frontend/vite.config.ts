@@ -9,8 +9,8 @@ import type { Plugin } from "vite";
 // app shows commands that download them from the app itself.
 const CORS_SCRIPTS = ["b2-cors.sh", "b2-cors.ps1"];
 // Content-Security-Policy (meta tag; GitHub Pages cannot set headers). The page
-// may only load its own code and only talk to itself, Backblaze B2 and the
-// desktop app's IPC, so injected content cannot load scripts or send data
+// may only load its own code and only talk to itself and Backblaze B2,
+// so injected content cannot load scripts or send data
 // (e.g. the stored B2 key) anywhere else.
 function contentSecurityPolicy(): Plugin {
   const apiBase = process.env.VITE_API_BASE;
@@ -30,7 +30,7 @@ function contentSecurityPolicy(): Plugin {
           "media-src 'self' data: blob:",
           "worker-src 'self' blob:",
           [
-            "connect-src 'self' data: blob: https://*.backblazeb2.com ipc: http://ipc.localhost",
+            "connect-src 'self' data: blob: https://*.backblazeb2.com",
             apiBase ? new URL(apiBase).origin : "",
             dev ? "ws: wss:" : "",
           ]

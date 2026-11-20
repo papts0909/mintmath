@@ -70,28 +70,29 @@ Yêu cầu: chạy trên máy tính, Android, iOS/iPadOS, dùng cá nhân và ch
   - Nội dung chừa chỗ cho bàn phím ảo (`--vk-height`).
   - Trên màn hẹp, thanh công cụ cuộn theo trang.
 - **Cài app:** nút "Cài ứng dụng" dùng sự kiện `beforeinstallprompt` (Chrome/Edge/Android). Trên iOS/iPadOS có hướng dẫn "Thêm vào MH chính".
-- **Phát hành:** workflow GitHub Pages chạy thủ công (`.github/workflows/pages.yml`), build với `VITE_BASE=/<repo>/`.
+- **Phát hành:** workflow GitHub Pages (`.github/workflows/pages.yml`) chạy mỗi khi `frontend/` trên `main` thay đổi, build với `VITE_BASE=/<repo>/`.
 
 ## Lưu trữ đám mây: Backblaze B2 thay cho Google Drive
 
 - Mỗi người dùng **tự tạo tài khoản B2** và nhập keyID, applicationKey, bucket, endpoint trong app. Không có máy chủ MintMath giữ khóa hay dữ liệu.
 - Gọi API tương thích S3 (ListObjectsV2/Get/Put/Delete), ký SigV4 bằng `aws4fetch`. Code ở `frontend/src/cloud/`.
-- Ba nền tảng cùng một code:
-  - Bản web/PWA dùng `fetch` (bucket cần quy tắc CORS).
-  - Desktop dùng `@tauri-apps/plugin-http`, chỉ được phép gọi `https://*.backblazeb2.com`.
-  - Android dùng `CapacitorHttp` (patch `fetch` bằng HTTP native).
+- Gọi bằng `fetch` của trình duyệt, nên bucket cần quy tắc CORS.
 - Tên tệp: `mintmath/<tiêu-đề-không-dấu>__<id>.mintmath.json`. id giữ khóa ổn định giữa các máy; phần tiêu đề để dễ đọc khi duyệt bucket. Đổi tiêu đề thì tệp cũ được thay.
 - Đồng bộ hai chiều dựa trên ETag và `updatedAt` đã ghi nhớ ở lần đồng bộ trước (`planSync`, hàm thuần, có test). Không bao giờ xóa; sửa ở cả hai nơi thì giữ cả hai bản ("… (bản trên B2)").
 - Khóa lưu trong bộ nhớ cục bộ của app/trình duyệt trên từng máy. Nên dùng application key chỉ có quyền trên một bucket. Lưu khóa vào kho bảo mật của hệ điều hành ghi ở BACKLOG.
 
 ## Tên app: MintMath
 
-Mọi chỗ người dùng nhìn thấy (giao diện, manifest, cửa sổ desktop, tên app Android, tên tệp) dùng tên **MintMath**. Logo nằm ở `frontend/brand/mark.svg` (lấy từ bản thiết kế "MintMath Logo"). Mọi icon đều tạo lại từ logo này bằng `node scripts/make-icons.mjs`.
+Mọi chỗ người dùng nhìn thấy (giao diện, manifest, tên tệp) dùng tên **MintMath**. Logo nằm ở `frontend/brand/mark.svg` (lấy từ bản thiết kế "MintMath Logo"). Mọi icon đều tạo lại từ logo này bằng `node scripts/make-icons.mjs`.
 
 Một số định danh nội bộ vẫn giữ tên cũ để không làm mất dữ liệu đã có:
 - khóa lưu trữ `mathpad.*` và cơ sở dữ liệu IndexedDB `mathpad`;
-- mã định danh app `app.mathpad.editor` trên Android và desktop (đổi mã này thì máy sẽ coi là app khác: phải cài lại, và mất dữ liệu đang có);
 - biến môi trường `MATHPAD_*` của backend;
-- tên khóa ký APK.
 
 Tệp kiểu cũ vẫn mở được: `.mathpad.json`, bản sao lưu `mathpad-library`, bài trên B2 dạng `….mathpad.json`, và quy tắc CORS `mathpad-web` (được thay bằng `mintmath-web`).
+
+## Chỉ làm bản web (PWA)
+
+Đã có lúc làm thêm app Android (Capacitor) và app máy tính (Tauri). Bỏ cả hai để chỉ lo một bản: PWA cài được trên máy tính, Android, iPhone, iPad, chạy offline, và tự cập nhật qua GitHub Pages. Đổi lại, bản web cần bật CORS cho bucket B2 (app có hướng dẫn và lệnh sẵn), và PDF xuất offline đi qua hộp thoại In của trình duyệt.
+
+Code của hai app (thư mục `android/`, `src-tauri/`, workflow build, tài liệu) còn nguyên ở nhánh `archive/native-apps`, tách ra từ `main` lúc commit `974b28b`.

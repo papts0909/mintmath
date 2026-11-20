@@ -11,16 +11,12 @@ import { useDocStore } from "../core/docStore";
 import { TexLineError } from "../core/texBuilder";
 import { uploadFileToB2, useB2 } from "../cloud/b2Actions";
 import { exportTexLocal, pdfLocal, pngLocal, printDoc } from "../export/localExport";
-import { isNativeApp } from "../native";
 
 interface Props {
   onPreview: (url: string) => void;
 }
 
 type Status = { kind: "info" | "error"; text: string } | null;
-
-// Android app: no print dialog in the WebView, so PDFs are built on the device.
-const NATIVE = isNativeApp();
 
 const OFFLINE_PDF_HINT =
   "Không có máy chủ xuất PDF: đã mở hộp thoại In — chọn “Lưu thành PDF” (trên điện thoại: In → Chia sẻ/Lưu).";
@@ -84,12 +80,6 @@ export default function ExportMenu({ onPreview }: Props) {
           downloadBlob(blob, filename);
         },
         async () => {
-          if (NATIVE) {
-            exportTexLocal(doc());
-            const { blob, filename } = await pdfLocal(doc());
-            downloadBlob(blob, filename);
-            return;
-          }
           print();
           return { kind: "info", text: OFFLINE_PDF_HINT };
         },
@@ -157,28 +147,19 @@ export default function ExportMenu({ onPreview }: Props) {
         <Image className="icon" aria-hidden="true" />
         PNG
       </button>
-      {NATIVE ? null : (
-        <>
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void preview()}
-            title="Xem trước bản in"
-          >
-            <Eye className="icon" aria-hidden="true" />
-            Xem trước
-          </button>
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void run("bản in", async () => print())}
-            title="In hoặc lưu PDF ngay trên máy, không cần mạng"
-          >
-            <Printer className="icon" aria-hidden="true" />
-            In
-          </button>
-        </>
-      )}
+      <button type="button" disabled={busy !== null} onClick={() => void preview()} title="Xem trước bản in">
+        <Eye className="icon" aria-hidden="true" />
+        Xem trước
+      </button>
+      <button
+        type="button"
+        disabled={busy !== null}
+        onClick={() => void run("bản in", async () => print())}
+        title="In hoặc lưu PDF ngay trên máy, không cần mạng"
+      >
+        <Printer className="icon" aria-hidden="true" />
+        In
+      </button>
       {b2Connected ? (
         <button
           type="button"
