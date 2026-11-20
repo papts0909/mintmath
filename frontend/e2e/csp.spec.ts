@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { FAKE_B2, installFakeB2, type FakeBucket } from "./fakeB2";
+import { exportAs } from "./helpers";
 import { typeSample } from "./sampleSteps";
 
 async function collectViolations(page: Page): Promise<string[]> {
@@ -32,11 +33,8 @@ test("everyday use causes no CSP violation", async ({ page }) => {
   await page.reload();
 
   await typeSample(page);
-  for (const name of ["LaTeX", "PNG", "PDF"]) {
-    const [dl] = await Promise.all([
-      page.waitForEvent("download"),
-      page.getByRole("button", { name, exact: true }).click(),
-    ]);
+  for (const name of ["LaTeX (.tex)", "PNG", "PDF"]) {
+    const [dl] = await Promise.all([page.waitForEvent("download"), exportAs(page, name)]);
     expect(readFileSync((await dl.path())!).length).toBeGreaterThan(100);
   }
 

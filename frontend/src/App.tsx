@@ -7,7 +7,6 @@ import ShortcutPanel from "./components/ShortcutPanel";
 import StatusBar from "./components/StatusBar";
 import Toolbar from "./components/Toolbar";
 import TabBar from "./components/TabBar";
-import TouchBar from "./components/TouchBar";
 import { useDocStore } from "./core/docStore";
 import {
   createAutosaver,
@@ -20,6 +19,7 @@ import {
 import { putDoc, requestPersistentStorage } from "./core/library";
 import { receiveNewerDoc, restoreTabs } from "./core/tabs";
 import { applyTheme } from "./core/theme";
+import { printPage } from "./export/exportActions";
 import type { Doc } from "./core/types";
 
 let persistAsked = false;
@@ -136,6 +136,14 @@ export default function App() {
       if (mod && e.key === ".") {
         e.preventDefault();
         setZen(!zenRef.current);
+      } else if (mod && !e.shiftKey && (e.key === "p" || e.key === "P")) {
+        // Print the document's own print layout, not the editor screen.
+        e.preventDefault();
+        void printPage();
+      } else if (e.key === "F10" && !mod && !e.altKey) {
+        // F10 moves to the menu bar (the first menu, or the narrow "Menu").
+        e.preventDefault();
+        document.querySelector<HTMLButtonElement>(".menubar .dropdown-trigger")?.focus();
       } else if (mod && e.key === "/") {
         e.preventDefault();
         setShowShortcuts((v) => !v);
@@ -225,7 +233,6 @@ export default function App() {
         onMessage={setToast}
       />
       <TabBar />
-      <TouchBar />
       <main className="workspace">
         <Editor autoSubscript={settings.autoSubscript} imeFix={settings.imeFix} />
         {showLibrary ? (

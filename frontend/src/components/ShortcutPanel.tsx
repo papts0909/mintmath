@@ -21,6 +21,8 @@ const KEYS: [string, string][] = [
   ["/  ^  _", "Phân số, mũ, chỉ số dưới"],
   ["Ctrl+S", "Lưu lên Backblaze B2 (khi đã kết nối)"],
   ["Ctrl+/", "Bật/tắt bảng này"],
+  ["Ctrl+P", "In bài"],
+  ["F10", "Lên thanh menu (rồi dùng phím mũi tên)"],
   ["Ctrl+.", "Bật/tắt chế độ Zen (chỉ còn phần làm toán)"],
 ];
 

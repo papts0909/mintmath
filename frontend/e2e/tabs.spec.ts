@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { freshPage, readLines } from "./helpers";
+import { freshPage, menu, readLines } from "./helpers";
 
 const tabs = (page: Page) => page.getByRole("tablist", { name: "Các bài đang mở" }).getByRole("tab");
 
@@ -58,7 +58,7 @@ test("several documents in tabs: new, switch, keep content and undo, close", asy
   await page.getByRole("button", { name: "Đóng tab Bài B" }).click();
   await expect(tabs(page)).toHaveText(["Bài A"]);
   await expect(page.locator(".title-input")).toHaveValue("Bài A");
-  await page.getByRole("button", { name: "Thư viện", exact: true }).click();
+  await menu(page, "Tệp", "Thư viện");
   const lib = page.getByRole("complementary", { name: "Thư viện bài tập" });
   await expect(lib.getByText("Bài B")).toBeVisible();
 
