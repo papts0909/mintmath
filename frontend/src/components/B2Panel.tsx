@@ -16,7 +16,6 @@ import {
 } from "../cloud/b2Actions";
 import { displayName, isDocKey } from "../cloud/b2Sync";
 import { useDocStore } from "../core/docStore";
-import { isNativeApp } from "../native";
 import { switchToDoc } from "./LibraryPanel";
 
 const fmtDate = (iso: string) => {
@@ -121,12 +120,10 @@ function ConnectForm() {
           <li>
             Mở bucket vừa tạo, chép dòng <b>Endpoint</b> và tên bucket vào đây rồi bấm <b>Kết nối</b>.
           </li>
-          {isNativeApp() ? null : (
-            <li>
-              Bản web: lần đầu kết nối, bucket cần cho phép địa chỉ <code>{location.origin}</code>. Nếu chưa,
-              app sẽ hiện hướng dẫn bật (làm một lần). App máy tính và Android không cần bước này.
-            </li>
-          )}
+          <li>
+            Lần đầu kết nối, bucket cần cho phép địa chỉ <code>{location.origin}</code>. Nếu chưa, app sẽ hiện
+            hướng dẫn bật (làm một lần).
+          </li>
         </ol>
         <p className="muted small">
           Khóa chỉ lưu trên thiết bị này. Không chia sẻ applicationKey cho người khác.
@@ -184,7 +181,7 @@ function CorsHelp() {
       <p>
         Trình duyệt chỉ cho MintMath đọc và lưu bài trong bucket <b>{bucket}</b> khi bucket cho phép địa chỉ{" "}
         <code>{cors.origin}</code>. Backblaze không cho đổi cài đặt này từ trang web, nên cần chạy một lệnh
-        ngắn (khoảng 1 phút, không cài thêm gì). App máy tính và app Android không cần bước này.
+        ngắn (khoảng 1 phút, không cài thêm gì).
       </p>
       <ol>
         <li>
@@ -230,7 +227,8 @@ function CorsHelp() {
       </ol>
       <p className="muted small">
         Máy không mở được Terminal/PowerShell (ví dụ máy công ty)? Mở shell.cloud.google.com bằng tài khoản
-        Google, dán lệnh macOS / Linux vào đó. Hoặc dùng MintMath trên điện thoại Android.
+        Google, dán lệnh macOS / Linux vào đó. Hoặc nhờ ai đó có máy tính chạy giúp: lệnh chỉ đổi cài đặt
+        bucket, không đổi gì trên máy.
       </p>
       <button type="button" disabled={busy !== null} onClick={() => void connectB2(cors.cfg)}>
         <RefreshCw className="icon" aria-hidden="true" />

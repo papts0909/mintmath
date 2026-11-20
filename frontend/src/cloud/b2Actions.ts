@@ -7,7 +7,6 @@ import { getDoc, listDocs, putDoc } from "../core/library";
 import { newId } from "../core/id";
 import { importTex } from "../core/texImport";
 import type { Doc } from "../core/types";
-import { isDesktopApp, isNativeApp } from "../native";
 import {
   B2Error,
   createB2Client,
@@ -70,18 +69,8 @@ function saveSyncState(s: SyncState): void {
 
 // ---------- network ----------
 
-/** Desktop app: Tauri's HTTP plugin (no CORS). Android: Capacitor patches
- *  window.fetch with native HTTP (CapacitorHttp). Browser/PWA: fetch, which
- *  needs a CORS rule on the bucket. */
-async function platformFetch(url: string, init: RequestInit): Promise<Response> {
-  if (isDesktopApp()) {
-    const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-    return tauriFetch(url, init);
-  }
-  return fetch(url, init);
-}
-
-let fetchImpl: (url: string, init: RequestInit) => Promise<Response> = platformFetch;
+/** The browser's fetch; calls to B2 need a CORS rule on the bucket. */
+let fetchImpl: (url: string, init: RequestInit) => Promise<Response> = (url, init) => fetch(url, init);
 /** Tests can swap the transport. */
 export function _setB2Fetch(f: typeof fetchImpl): void {
   fetchImpl = f;
@@ -134,8 +123,6 @@ export function describeB2Error(e: unknown): string {
 export async function explainNetworkError(
   cfg: B2Config,
 ): Promise<{ kind: "cors" | "network"; text: string }> {
-  if (isNativeApp())
-    return { kind: "network", text: "Không kết nối được tới B2. Kiểm tra mạng rồi thử lại." };
   const ep = parseEndpoint(cfg.endpoint);
   let reachable = false;
   if (ep) {

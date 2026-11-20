@@ -6,15 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: [
-      "dist",
-      "android",
-      "src-tauri",
-      "node_modules",
-      "test-results",
-      "playwright-report",
-      "_spike*.mjs",
-    ],
+    ignores: ["dist", "node_modules", "test-results", "playwright-report", "_spike*.mjs"],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

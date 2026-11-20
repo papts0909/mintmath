@@ -69,10 +69,7 @@ MintMath là PWA nên cài được thẳng từ trình duyệt và chạy đư�
 
 Có bản mới thì app tự cập nhật, hoặc hiện nút "Có bản mới – tải lại".
 
-Ngoài ra còn có app cài đặt hẳn hoi, build bằng GitHub Actions. Hiện tạm không tự build nữa, chỉ có bản web; cần thì vào Actions bấm "Run workflow":
-
-- Android (APK, Capacitor): xem [docs/ANDROID.md](docs/ANDROID.md).
-- macOS `.dmg` và Windows `.exe`/`.msi` (Tauri): xem [docs/DESKTOP.md](docs/DESKTOP.md). App chưa ký số nên lần đầu mở sẽ bị hệ điều hành hỏi.
+Trước đây có thêm app Android (Capacitor) và app máy tính (Tauri). Giờ chỉ làm bản web. Code cũ của hai app đó còn ở nhánh `archive/native-apps` nếu sau này cần.
 
 Bản web tự đưa lên GitHub Pages mỗi khi `frontend/` trên `main` thay đổi. Cách đặt lên chỗ khác (Cloudflare Pages, Netlify) có trong [docs/DEPLOY.md](docs/DEPLOY.md).
 
@@ -103,7 +100,7 @@ Kết nối rồi thì có:
 - "Đồng bộ thư viện" hai chiều giữa máy và B2. Đồng bộ không bao giờ xóa. Bài bị sửa ở cả hai nơi thì giữ cả hai bản.
 - Tải tệp bất kỳ lên/xuống. Nút "B2" trong nhóm Xuất lưu luôn bản `.tex` và PDF.
 
-Bản web cần bật CORS cho bucket một lần. Khi thiếu, app sẽ đưa sẵn lệnh để chép vào Terminal hoặc PowerShell, không cần cài gì thêm. App Android và app máy tính thì không cần bước này. Chi tiết trong [docs/B2.md](docs/B2.md).
+Bản web cần bật CORS cho bucket một lần. Khi thiếu, app sẽ đưa sẵn lệnh để chép vào Terminal hoặc PowerShell, không cần cài gì thêm. Chi tiết trong [docs/B2.md](docs/B2.md).
 
 Phần B2 mới chạy với B2 giả trong test. Ai dùng tài khoản thật mà gặp lỗi thì báo lại.
 
